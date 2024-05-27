@@ -133,12 +133,11 @@ public class Wellnest extends  JFrame  {
         JPanel taskPanel = new JPanel(new GridLayout(tasksForCurrentDate.size(), 1)); // One column for tasks
         taskPanel.setBackground(Color.WHITE);
     
-        // Add task labels to the task panel
+        // Add task panels to the task panel
         if (tasksForCurrentDate != null && !tasksForCurrentDate.isEmpty()) {
             for (String task : tasksForCurrentDate) {
-                JLabel taskLabel = new JLabel(task, SwingConstants.CENTER);
-                taskLabel.setFont(new Font("Arial", Font.PLAIN, 30));
-                taskPanel.add(taskLabel);
+                JPanel taskItemPanel = createTaskItemPanel(task);
+                taskPanel.add(taskItemPanel);
             }
         } else {
             // If there are no tasks for the current date, display a message
@@ -155,7 +154,80 @@ public class Wellnest extends  JFrame  {
         return panel;
     }
     
+    private JPanel createTaskItemPanel(String taskName) {
+        JPanel taskPanel = new JPanel(new BorderLayout());
+    
+        // Create a label for the task name
+        JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
+        taskPanel.add(nameLabel, BorderLayout.NORTH);
+    
+        // Create a panel for the buttons and progress bar
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 4)); // 1 row and 4 columns
+    
+        // Create buttons for the task item
+        JButton completedButton = new JButton("Completed");
+        JButton skippedButton = new JButton("Skipped");
+        JButton button1 = new JButton("1");
+    
+        // Create a progress bar for the task item
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setStringPainted(true);
+        progressBar.setValue(0); // Set initial value
+        progressBar.setString("0%"); // Set initial text
 
+        // Create a label to indicate completion status
+        JLabel completionLabel = new JLabel("", SwingConstants.CENTER); 
+    
+        // Add action listeners to the buttons
+        completedButton.addActionListener(e -> {
+            // Set progress bar to 100% when "Completed" button is clicked
+            progressBar.setValue(100);
+            progressBar.setString("100%");
+            // Disable other buttons
+            completedButton.setEnabled(false);
+            skippedButton.setEnabled(false);
+            button1.setEnabled(false);
+            // Update completion label
+            completionLabel.setText("Completed");
+        });
+
+        skippedButton.addActionListener(e -> {
+            // Update completion label when "Skipped" button is clicked
+            completionLabel.setText("Skipped");
+            // Disable other buttons
+            completedButton.setEnabled(false);
+            skippedButton.setEnabled(false);
+            button1.setEnabled(false);
+        });
+
+        button1.addActionListener(e -> {
+            // Implement action when "1" button is clicked
+            int currentValue = progressBar.getValue();
+            if (currentValue < 100) {
+                progressBar.setValue(currentValue + 10); // Increment progress by 10%
+                progressBar.setString((currentValue + 10) + "%"); // Update progress text
+                if (currentValue + 10 >= 100) {
+                    // If progress reaches 100%, update completion label
+                    completionLabel.setText("Completed");
+                }
+            }
+        });
+    
+        // Add components to the button panel
+        buttonPanel.add(completedButton);
+        buttonPanel.add(skippedButton);
+        buttonPanel.add(button1);
+        buttonPanel.add(progressBar);
+    
+        // Add the button panel to the task panel
+        taskPanel.add(buttonPanel, BorderLayout.CENTER);
+
+        // Add the completion label below the button panel
+        taskPanel.add(completionLabel, BorderLayout.SOUTH);
+    
+        return taskPanel;
+    }
+    
     private JPanel createStatsPanel() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.WHITE);

@@ -7,3 +7,6 @@
 2024-05-27|drink water
 2024-05-27|drink water
 2024-05-27|watch anime
+2024-05-27|sleep
+2024-05-27|test
+2024-05-27|new task
