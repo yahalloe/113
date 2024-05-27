@@ -16,6 +16,7 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Stack;
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -136,7 +137,7 @@ public class Wellnest extends  JFrame  {
         // Add task panels to the task panel
         if (tasksForCurrentDate != null && !tasksForCurrentDate.isEmpty()) {
             for (String task : tasksForCurrentDate) {
-                JPanel taskItemPanel = createTaskItemPanel(task);
+                JPanel taskItemPanel = createTaskItemPanel(currentDate.toString(), task);
                 taskPanel.add(taskItemPanel);
             }
         } else {
@@ -154,7 +155,7 @@ public class Wellnest extends  JFrame  {
         return panel;
     }
     
-    private JPanel createTaskItemPanel(String taskName) {
+    private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel(new BorderLayout());
     
         // Create a label for the task name
@@ -172,46 +173,78 @@ public class Wellnest extends  JFrame  {
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
-        progressBar.setValue(0); // Set initial value
-        progressBar.setString("0%"); // Set initial text
+    
+        // Get progress value from the database
+        int[] progressData = getTaskProgress(date, taskName);
+        int currentProgress = progressData[0];
+        int totalSteps = progressData[1];
+        progressBar.setValue(currentProgress); // Set initial value
+        progressBar.setString(currentProgress + "%"); // Set initial text
 
-        // Create a label to indicate completion status
-        JLabel completionLabel = new JLabel("", SwingConstants.CENTER); 
+        // Calculate the increment value based on the total steps
+        float incrementValue = 100.0f / totalSteps;
     
         // Add action listeners to the buttons
         completedButton.addActionListener(e -> {
-            // Set progress bar to 100% when "Completed" button is clicked
-            progressBar.setValue(100);
+            progressBar.setValue(100); // Set progress to 100%
             progressBar.setString("100%");
-            // Disable other buttons
             completedButton.setEnabled(false);
             skippedButton.setEnabled(false);
             button1.setEnabled(false);
-            // Update completion label
-            completionLabel.setText("Completed");
+            JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
+            taskPanel.add(statusLabel, BorderLayout.SOUTH);
+            taskPanel.revalidate();
+            taskPanel.repaint();
         });
-
+    
         skippedButton.addActionListener(e -> {
-            // Update completion label when "Skipped" button is clicked
-            completionLabel.setText("Skipped");
-            // Disable other buttons
+            JLabel statusLabel = new JLabel("Task Skipped", SwingConstants.CENTER);
+            taskPanel.add(statusLabel, BorderLayout.SOUTH);
             completedButton.setEnabled(false);
             skippedButton.setEnabled(false);
             button1.setEnabled(false);
+            taskPanel.revalidate();
+            taskPanel.repaint();
         });
-
+    
         button1.addActionListener(e -> {
-            // Implement action when "1" button is clicked
-            int currentValue = progressBar.getValue();
+            float currentValue = progressBar.getValue();
             if (currentValue < 100) {
-                progressBar.setValue(currentValue + 10); // Increment progress by 10%
-                progressBar.setString((currentValue + 10) + "%"); // Update progress text
-                if (currentValue + 10 >= 100) {
-                    // If progress reaches 100%, update completion label
-                    completionLabel.setText("Completed");
+                // Calculate the increment value based on the total steps
+                float increment = 100.0f / totalSteps;
+                
+                // Add the increment to the current value
+                float newProgress = currentValue + incrementValue;
+        
+                System.out.println(increment);
+                System.out.println(currentValue);
+                System.out.println(newProgress);
+                
+                // Ensure newProgress doesn't exceed 100
+                if (newProgress > 100.0f) {
+                    newProgress = 100.0f;
                 }
+        
+                // Set the progress bar's value and update its display text with float precision
+                progressBar.setValue((int) newProgress);
+                progressBar.setString(String.format("%.1f%%", newProgress)); // Update progress text with one decimal place
+        
+                // Check if the progress is now complete
+                if (newProgress >= 100.0f) {
+                    JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
+                    taskPanel.add(statusLabel, BorderLayout.SOUTH);
+                    completedButton.setEnabled(false);
+                    skippedButton.setEnabled(false);
+                    button1.setEnabled(false);
+                }
+        
+                // Repaint the task panel
+                taskPanel.revalidate();
+                taskPanel.repaint();
             }
         });
+        
+        
     
         // Add components to the button panel
         buttonPanel.add(completedButton);
@@ -221,9 +254,6 @@ public class Wellnest extends  JFrame  {
     
         // Add the button panel to the task panel
         taskPanel.add(buttonPanel, BorderLayout.CENTER);
-
-        // Add the completion label below the button panel
-        taskPanel.add(completionLabel, BorderLayout.SOUTH);
     
         return taskPanel;
     }
@@ -423,6 +453,28 @@ private void loadTasksFromFile() {
     }
 }
 
+private int[] getTaskProgress(String date, String taskName) {
+    String filePath = "tasks.txt"; // Adjust this if the file path is different
+    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split("\\|");
+            if (parts.length == 3) {
+                String fileDate = parts[0];
+                String fileTaskName = parts[1];
+                int totalSteps = Integer.parseInt(parts[2]);
+                if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
+                    return new int[]{0, totalSteps}; // Progress is initially 0, and the total steps
+                }
+            }
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    return new int[]{0, 1}; // Default to 0 progress and 1 step if not found
+}
+
+
 
     // Method to save tasks to file
     private void saveTasksToFile() {
@@ -454,14 +506,9 @@ private void loadTasksFromFile() {
                 // Get the selected date from the calendar
                 LocalDate selectedDate = calendar.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 
-                // Prompt the user to input the task name
-                String taskName = JOptionPane.showInputDialog(null, "Enter the task name:");
-                
-                // Check if the user entered a task name
-                if (taskName != null && !taskName.isEmpty()) {
-                    // Add the task to the database
-                    addTask(selectedDate, taskName);
-                }
+                // Prompt the user to input the task details
+                TaskInputDialog taskDialog = new TaskInputDialog(selectedDate);
+                taskDialog.setVisible(true);
             }
         });
         
@@ -472,13 +519,73 @@ private void loadTasksFromFile() {
         setCurrentPanel(calendarPanel);
     }
 
-    private void addTask(LocalDate date, String task) {
-        // Add the task to the task database
-        taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
+    private class TaskInputDialog extends JDialog {
+        private LocalDate selectedDate;
+    
+        private JTextField taskNameField;
+        private JSpinner progressSpinner;
+        private JButton addButton;
+        private JButton cancelButton;
+    
+        public TaskInputDialog(LocalDate selectedDate) {
+            this.selectedDate = selectedDate;
+            setTitle("Add Task");
+            setSize(300, 200);
+            setResizable(false);
+            setLocationRelativeTo(null);
+            setModal(true);
+    
+            initComponents();
+        }
+    
+        private void initComponents() {
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+    
+            JLabel nameLabel = new JLabel("Task Name:");
+            taskNameField = new JTextField(15);
+    
+            JLabel progressLabel = new JLabel("Times to Complete:");
+            SpinnerModel spinnerModel = new SpinnerNumberModel(0, 0, 100, 1);
+            progressSpinner = new JSpinner(spinnerModel);
+    
+            JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+            inputPanel.add(nameLabel);
+            inputPanel.add(taskNameField);
+            inputPanel.add(progressLabel);
+            inputPanel.add(progressSpinner);
+    
+            addButton = new JButton("Add");
+            addButton.addActionListener(e -> {
+                addTask(selectedDate, taskNameField.getText(), (int) progressSpinner.getValue());
+                dispose();
+            });
+    
+            cancelButton = new JButton("Cancel");
+            cancelButton.addActionListener(e -> {
+                dispose();
+            });
+    
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            buttonPanel.add(addButton);
+            buttonPanel.add(cancelButton);
+    
+            panel.add(inputPanel, BorderLayout.CENTER);
+            panel.add(buttonPanel, BorderLayout.SOUTH);
+    
+            add(panel);
+        }
+    }
+
+    private void addTask(LocalDate date, String task, int progress) {
+        // Add the task to the task database with its progress
+        String taskWithProgress = task + "|" + progress;
+        taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(taskWithProgress);
         
         // Save tasks to file
         saveTasksToFile();
     }
+    
 
     private void goBack() {
         if (!panelStack.isEmpty()) {
