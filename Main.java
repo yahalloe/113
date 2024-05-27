@@ -1,5 +1,7 @@
-class Main {
+import javax.swing.SwingUtilities;
+
+class Main extends Wellnest {
     public static void main(String[] args) {
-        new Wellnest();
+        SwingUtilities.invokeLater(() -> new Wellnest());
     }
 }
