@@ -397,9 +397,20 @@ public class Wellnest extends  JFrame  {
         JLabel streakLabel = new JLabel("Current Streak: " + streakCount);
         streakLabel.setHorizontalAlignment(SwingConstants.CENTER);
         streakLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        streakLabel.setForeground(Color.PINK);
+        streakLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+    
+        // Create task count label
+        JLabel taskCountLabel = new JLabel("Tasks Completed: " + countCompletedTasks());
+        taskCountLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        taskCountLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        taskCountLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Add padding
+    
+        // Add streak label to the panel's NORTH position
+        panel.add(streakLabel, BorderLayout.NORTH);
         
-        // Add streak label to the panel
-        panel.add(streakLabel, BorderLayout.CENTER);
+        // Add task count label to the panel's CENTER position
+        panel.add(taskCountLabel, BorderLayout.CENTER);
         
         return panel;
     }
@@ -532,7 +543,7 @@ public class Wellnest extends  JFrame  {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                openAddPanel();
+                openCalendarPanel();
             }
         });
         
@@ -541,48 +552,20 @@ public class Wellnest extends  JFrame  {
         return panel;
     }
     
-    /**
-     * Creates the panel for adding tasks, providing options to add a regular habit or a one-time task.
-     *
-     * @return The JPanel containing the components for adding tasks.
-     */
-    private JPanel createAddPanel() {
-        JPanel panel = new JPanel(new GridLayout(2, 1));
-        
-        // Create buttons for selecting between regular habit and one-time task
-        JButton regularHabitButton = new JButton("Add Regular Habit");
-        JButton oneTimeTaskButton = new JButton("Add One-Time Task");
-        
-        // Attach action listeners to the buttons
-        regularHabitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                openCalendarPanel();
-            }
-        });
-        
-        oneTimeTaskButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Handle the action when the "Add One-Time Task" button is clicked
-                // Implement your logic here
-                System.out.println("Add One-Time Task button clicked");
-            }
-        });
-        
-        // Add buttons to the panel
-        panel.add(regularHabitButton);
-        panel.add(oneTimeTaskButton);
-        
-        return panel;
-    }
-    
     private void showTodayPanel() {
         switchPanel(todayPanel);
     }
     
     private void showStatsPanel() {
-        switchPanel(statsPanel);
+        // Get the stats panel
+        JPanel statsPanel = createStatsPanel();
+        
+        // Update the task count label
+        JLabel taskCountLabel = (JLabel) statsPanel.getComponent(1); // Assuming taskCountLabel is the second component
+        updateTaskCountLabel(taskCountLabel);
+        
+        // Set the stats panel as the current panel
+        setCurrentPanel(statsPanel);
     }
     
     private void showAllHabitsPanel() {
@@ -851,9 +834,9 @@ public class Wellnest extends  JFrame  {
         return 0.0f; // Return 0 if not found or error
     }
     
-    private void openAddPanel() {
-        setCurrentPanel(createAddPanel());
-    }
+    // private void openAddPanel() {
+    //     setCurrentPanel(createAddPanel());
+    // }
     
     /**
      * Opens a calendar panel to select a date and add a new task.
@@ -867,6 +850,11 @@ public class Wellnest extends  JFrame  {
     private void openCalendarPanel() {
         // Create a calendar panel to select the date
         JPanel calendarPanel = new JPanel(new BorderLayout());
+        
+        // Create a label to prompt the user
+        JLabel promptLabel = new JLabel("Select a date to enter the task:");
+        promptLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        promptLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
         // Create a JCalendar instance
         JCalendar calendar = new JCalendar();
@@ -884,7 +872,8 @@ public class Wellnest extends  JFrame  {
             }
         });
         
-        // Add the calendar to the panel
+        // Add the prompt label and the calendar to the panel
+        calendarPanel.add(promptLabel, BorderLayout.NORTH);
         calendarPanel.add(calendar, BorderLayout.CENTER);
         
         // Show the calendar panel in the add panel
@@ -916,6 +905,29 @@ public class Wellnest extends  JFrame  {
         return streakCount;
     }
     
+    private int countCompletedTasks() {
+        int completedTasks = 0;
+        String filePath = "taskCompleted.txt"; // Adjust this if the file path is different
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Assuming each line represents a completed task
+                completedTasks++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle any IOExceptions here
+        }
+        
+        return completedTasks;
+    }
+    private void updateTaskCountLabel(JLabel taskCountLabel) {
+        // Get the count of completed tasks and update the label text
+        int completedTasks = countCompletedTasks();
+        taskCountLabel.setText("Tasks Completed: " + completedTasks);
+        }
+
     /**
      * Method to remove a task from the panel and the database
      * used in the removeButton action listener from the createTaskItemPanel method.
@@ -956,6 +968,12 @@ public class Wellnest extends  JFrame  {
      * @param progress
      */
     private void addTask(LocalDate date, String task, int progress) {
+        // Check if the task name is blank
+        if (task.trim().isEmpty()) {
+            // Task name is blank, do not proceed
+            return;
+        }
+
         // Add the task to the task database with its progress
         String taskWithProgress = task + "|" + progress;
         taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(taskWithProgress);
@@ -1063,52 +1081,78 @@ public class Wellnest extends  JFrame  {
         private void initComponents() {
             JPanel panel = new JPanel(new BorderLayout());
             panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
+    
             JLabel nameLabel = new JLabel("Task Name:");
             taskNameField = new JTextField(15);
-        
+    
             JLabel progressLabel = new JLabel("Times to Complete:");
             SpinnerModel spinnerModel = new SpinnerNumberModel(1, 1, 100, 1); // Set minimum value to 0
             progressSpinner = new JSpinner(spinnerModel);
-        
+    
             JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
             inputPanel.add(nameLabel);
             inputPanel.add(taskNameField);
             inputPanel.add(progressLabel);
             inputPanel.add(progressSpinner);
-        
+    
             addButton = new JButton("Add");
             addButton.addActionListener(e -> {
-                addTask(selectedDate, taskNameField.getText(), (int) progressSpinner.getValue());
-                dispose();
+                if (validateInput()) {
+                    addTask(selectedDate, taskNameField.getText(), (int) progressSpinner.getValue());
+                    dispose();
+                }
             });
-        
+    
             cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(e -> {
                 dispose();
             });
-
+    
             addButton.setBackground(new Color(0, 120, 215));
             addButton.setForeground(Color.WHITE);
             addButton.setFocusPainted(false);
             addButton.setFont(new Font("Arial", Font.BOLD, 14));
             addButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-
+    
             cancelButton.setBackground(new Color(0, 120, 215));
             cancelButton.setForeground(Color.WHITE);
             cancelButton.setFocusPainted(false);
             cancelButton.setFont(new Font("Arial", Font.BOLD, 14));
             cancelButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-        
+    
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             buttonPanel.add(addButton);
             buttonPanel.add(cancelButton);
-        
+    
             panel.add(inputPanel, BorderLayout.CENTER);
             panel.add(buttonPanel, BorderLayout.SOUTH);
-        
+    
             add(panel);
         }
-        
+    
+        /**
+         * TODO: show the error message dialog if the input is invalid.
+         * But the error handling is working fine.
+         * 
+         * @return
+         */
+        private boolean validateInput() {
+            String input = progressSpinner.getValue().toString();
+            if (!input.matches("\\d+")) {
+                // If the input contains non-numeric characters, show an error message dialog
+                JOptionPane.showMessageDialog(this, "Please enter a valid number for 'Times to Complete'.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            
+            int progress = Integer.parseInt(input);
+            if (progress < 1) {
+                // Show an error message dialog if progress is less than 1
+                JOptionPane.showMessageDialog(this, "'Times to Complete' must be greater than zero.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            
+            // If validation succeeds, return true
+            return true;
+        }
     }
 }
