@@ -99,7 +99,7 @@ public class Wellnest extends  JFrame  {
         panel.setBackground(Color.WHITE);
     
         // Get the tasks for the current date
-        List<String> tasksForCurrentDate = taskDatabase.getOrDefault(currentDate, new ArrayList<>());
+        List<String> tasksForCurrentDate = taskDatabase.get(currentDate);
     
         // Create a panel to hold the calendar and tasks
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -143,7 +143,7 @@ public class Wellnest extends  JFrame  {
         taskPanel.setBackground(Color.WHITE);
     
         // Add task panels to the task panel
-        if (!tasksForCurrentDate.isEmpty()) {
+        if (tasksForCurrentDate != null && !tasksForCurrentDate.isEmpty()) {
             for (String task : tasksForCurrentDate) {
                 JPanel taskItemPanel = createTaskItemPanel(currentDate.toString(), task);
                 taskPanel.add(taskItemPanel);
@@ -161,15 +161,6 @@ public class Wellnest extends  JFrame  {
         panel.add(mainPanel, BorderLayout.CENTER);
     
         return panel;
-    }
-
-    // Method to update the "Today" panel
-    private void updateTodayPanel() {
-        homePanel.remove(todayPanel);
-        todayPanel = createTodayPanel();
-        homePanel.add(todayPanel, BorderLayout.CENTER);
-        homePanel.revalidate();
-        homePanel.repaint();
     }
     
     private JPanel createTaskItemPanel(String date, String taskName) {
@@ -318,7 +309,77 @@ public class Wellnest extends  JFrame  {
         }
     }
 
-    
+    // Method to load tasks from file
+    private void loadTasksFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                LocalDate date = LocalDate.parse(parts[0]);
+                String task = parts[1];
+                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTaskStatusFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String key = parts[0] + "|" + parts[1];
+                    String status = parts[2];
+                    taskStatusDatabase.put(key, status);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    // Load task progress from file
+    private void loadTaskProgressFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_PROGRESS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                String key = parts[0] + "|" + parts[1];
+                float value = Float.parseFloat(parts[2]);
+                taskProgressDatabase.put(key, value);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    // Method to save tasks to file
+    private void saveTasksToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE_PATH))) {
+            for (Map.Entry<LocalDate, List<String>> entry : taskDatabase.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<String> tasks = entry.getValue();
+                for (String task : tasks) {
+                    writer.write(date + "|" + task);
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    // Method to save task progress to file
+    private void saveTaskProgressToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_PROGRESS_FILE_PATH))) {
+            for (Map.Entry<String, Float> entry : taskProgressDatabase.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private JPanel createStatsPanel() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.WHITE);
@@ -427,8 +488,38 @@ public class Wellnest extends  JFrame  {
         return panel;
         }
 
+    private JPanel createAddPanel() {
+        JPanel panel = new JPanel(new GridLayout(2, 1));
+
+        // Create buttons for selecting between regular habit and one-time task
+        JButton regularHabitButton = new JButton("Add Regular Habit");
+        JButton oneTimeTaskButton = new JButton("Add One-Time Task");
+
+        // Attach action listeners to the buttons
+        regularHabitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openCalendarPanel();
+            }
+        });
+
+        oneTimeTaskButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Handle the action when the "Add One-Time Task" button is clicked
+                // Implement your logic here
+                System.out.println("Add One-Time Task button clicked");
+            }
+        });
+
+        // Add buttons to the panel
+        panel.add(regularHabitButton);
+        panel.add(oneTimeTaskButton);
+
+        return panel;
+    }
+
     private void showTodayPanel() {
-        updateTodayPanel();
         switchPanel(todayPanel);
     }
 
@@ -469,83 +560,6 @@ public class Wellnest extends  JFrame  {
         setCurrentPanel(createAddPanel());
     }
 
-    private JPanel createAddPanel() {
-        JPanel panel = new JPanel(new GridLayout(2, 1));
-
-        // Create buttons for selecting between regular habit and one-time task
-        JButton regularHabitButton = new JButton("Add Regular Habit");
-        JButton oneTimeTaskButton = new JButton("Add One-Time Task");
-
-        // Attach action listeners to the buttons
-        regularHabitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                openCalendarPanel();
-            }
-        });
-
-        oneTimeTaskButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Handle the action when the "Add One-Time Task" button is clicked
-                // Implement your logic here
-                System.out.println("Add One-Time Task button clicked");
-            }
-        });
-
-        // Add buttons to the panel
-        panel.add(regularHabitButton);
-        panel.add(oneTimeTaskButton);
-
-        return panel;
-    }
-
-    // Method to load tasks from file
-    private void loadTasksFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                LocalDate date = LocalDate.parse(parts[0]);
-                String task = parts[1];
-                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadTaskStatusFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                if (parts.length == 3) {
-                    String key = parts[0] + "|" + parts[1];
-                    String status = parts[2];
-                    taskStatusDatabase.put(key, status);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Load task progress from file
-    private void loadTaskProgressFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_PROGRESS_FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                String key = parts[0] + "|" + parts[1];
-                float value = Float.parseFloat(parts[2]);
-                taskProgressDatabase.put(key, value);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private int[] getTaskProgress(String date, String taskName) {
         String filePath = "tasks.txt"; // Adjust this if the file path is different
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -570,37 +584,6 @@ public class Wellnest extends  JFrame  {
     private String getTaskStatus(String date, String taskName) {
         return taskStatusDatabase.get(date + "|" + taskName);
     }
-    
-
-    // Method to save tasks to file
-    private void saveTasksToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE_PATH))) {
-            for (Map.Entry<LocalDate, List<String>> entry : taskDatabase.entrySet()) {
-                LocalDate date = entry.getKey();
-                List<String> tasks = entry.getValue();
-                for (String task : tasks) {
-                    writer.write(date + "|" + task);
-                    writer.newLine();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    // Method to save task progress to file
-    private void saveTaskProgressToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_PROGRESS_FILE_PATH))) {
-            for (Map.Entry<String, Float> entry : taskProgressDatabase.entrySet()) {
-                writer.write(entry.getKey() + "|" + entry.getValue());
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     // Method to update task progress in the taskProgress.txt file
     private void updateTaskProgress(String date, String taskName, float newProgress) {
         String filePath = "taskProgress.txt"; // Adjust this if the file path is different
@@ -635,7 +618,6 @@ public class Wellnest extends  JFrame  {
             ex.printStackTrace();
         }
     }
-
     // Method to get task progress value from taskProgress.txt file
     private float getTaskProgressValue(String date, String taskName) {
         String filePath = "taskProgress.txt"; // Adjust this if the file path is different
@@ -754,7 +736,6 @@ public class Wellnest extends  JFrame  {
         // Refresh the Today panel to reflect the new task
         refreshTodayPanel();
     }
-
     
     private void refreshTodayPanel() {
         todayPanel.removeAll(); // Remove all components from the Today panel
