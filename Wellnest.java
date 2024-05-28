@@ -21,6 +21,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The Wellnest class represents the main application window for the Wellnest task management system.
+ * It extends the JFrame class to provide a graphical user interface (GUI) for interacting with tasks
+ * and tracking progress.
+ * 
+ * This class manages the overall layout and behavior of the application, including navigation between
+ * different panels, task management functionality, and user interaction.
+ * 
+ * Users can use the Wellnest application to view, add, remove, and update tasks, track progress,
+ * and manage their daily routines efficiently.
+ * 
+ * The Wellnest class serves as the entry point for the application and orchestrates the interaction
+ * between various components such as task panels, calendar views, and progress tracking mechanisms.
+ * 
+ * @author 
+ * @version 1.0.0
+ */
 public class Wellnest extends  JFrame  {
 
     private JPanel homePanel;
@@ -51,6 +68,21 @@ public class Wellnest extends  JFrame  {
     // Task database
     private Map<LocalDate, List<String>> taskDatabase;
 
+    /**
+     * Constructs a new instance of the Wellnest application.
+     * Initializes the main application window with a title, size, and default close operation.
+     * 
+     * The constructor also initializes the task database, task status database, and task progress database.
+     * It loads existing tasks, task progress, and task statuses from files.
+     * 
+     * Initializes the panel stack and sets the current date to the current system date.
+     * Creates and configures the main panels for home, today's tasks, statistics, and all habits.
+     * Sets up the sidebar panel with navigation options.
+     * 
+     * Adds components to the home panel, sets it as the content pane of the frame, and makes the frame visible.
+     * 
+     * The constructor sets up the initial state of the application and prepares it for user interaction.
+     */
     public Wellnest() {
         setTitle("Wellnest App");
         setSize(800, 600);
@@ -94,6 +126,18 @@ public class Wellnest extends  JFrame  {
         currentPanel = todayPanel;
     }
 
+
+    /**
+     * Creates and configures the panel for displaying tasks for the current date.
+     * 
+     * This method constructs a panel with a calendar view for the current week
+     * and a list of tasks for the current date. If there are tasks for the current
+     * date, it creates task item panels for each task and adds them to the task list.
+     * If there are no tasks for the current date, it displays a message indicating
+     * that there are no tasks.
+     * 
+     * @return The panel for displaying tasks for the current date.
+     */
     private JPanel createTodayPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -163,6 +207,17 @@ public class Wellnest extends  JFrame  {
         return panel;
     }
     
+    /**
+     * Creates a panel representing a task item.
+     * 
+     * This method constructs a panel that displays information about a task,
+     * including its name, progress, and buttons for completing, skipping, and
+     * updating progress. It also includes a button for removing the task.
+     * 
+     * @param date The date of the task.
+     * @param taskName The name of the task.
+     * @return The panel representing the task item.
+     */
     private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel(new BorderLayout());
         taskPanel.setBackground(Color.WHITE);
@@ -326,103 +381,26 @@ public class Wellnest extends  JFrame  {
         return taskPanel;
     }
     
-    // Method to save task status
-    private void saveTaskStatus(String date, String taskName, String status) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_COMPLETED_FILE_PATH, true))) {
-            String entry = date + "|" + taskName + "|" + status;
-            writer.write(entry);
-            writer.newLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Method to load tasks from file
-    private void loadTasksFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                LocalDate date = LocalDate.parse(parts[0]);
-                String task = parts[1];
-                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadTaskStatusFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                if (parts.length == 3) {
-                    String key = parts[0] + "|" + parts[1];
-                    String status = parts[2];
-                    taskStatusDatabase.put(key, status);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    // Load task progress from file
-    private void loadTaskProgressFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_PROGRESS_FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\|");
-                String key = parts[0] + "|" + parts[1];
-                float value = Float.parseFloat(parts[2]);
-                taskProgressDatabase.put(key, value);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    // Method to save tasks to file
-    private void saveTasksToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE_PATH))) {
-            for (Map.Entry<LocalDate, List<String>> entry : taskDatabase.entrySet()) {
-                LocalDate date = entry.getKey();
-                List<String> tasks = entry.getValue();
-                for (String task : tasks) {
-                    writer.write(date + "|" + task);
-                    writer.newLine();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    // Method to save task progress to file
-    private void saveTaskProgressToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_PROGRESS_FILE_PATH))) {
-            for (Map.Entry<String, Float> entry : taskProgressDatabase.entrySet()) {
-                writer.write(entry.getKey() + "|" + entry.getValue());
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
+    /**
+     * Creates the panel for displaying statistics, such as the current streak count.
+     *
+     * @return The JPanel containing the statistics panel components.
+     */
     private JPanel createStatsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
-    
+        
         // Calculate streak count
         int streakCount = calculateStreakCount();
-    
+        
         // Create streak label
         JLabel streakLabel = new JLabel("Current Streak: " + streakCount);
         streakLabel.setHorizontalAlignment(SwingConstants.CENTER);
         streakLabel.setFont(new Font("Arial", Font.BOLD, 16));
-    
+        
         // Add streak label to the panel
         panel.add(streakLabel, BorderLayout.CENTER);
-    
+        
         return panel;
     }
 
@@ -430,17 +408,25 @@ public class Wellnest extends  JFrame  {
         JPanel panel = new JPanel();
         panel.setBackground(Color.WHITE);
         JLabel label = new JLabel("All Habits Panel");
-
-
+        
+        
         panel.add(label);
         return panel;
     }
-
+    
+    /**
+     * Creates the sidebar panel containing buttons for navigating to different sections of the application.
+     * The todayButton navigates to the Today section.
+     * The statsButton navigates to the Stats section.
+     * The allHabitsButton navigates to the All Habits section.
+     * 
+     * @return The JPanel containing the sidebar panel components.
+     */
     private JPanel createSidebarPanel() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.LIGHT_GRAY);
         panel.setPreferredSize(new Dimension(200, getHeight()));
-
+        
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -452,74 +438,82 @@ public class Wellnest extends  JFrame  {
         todayButton = new JButton("Today");
         statsButton = new JButton("Stats");
         allHabitsButton = new JButton("All Habits");
-
-
+        
+        
         todayButton.setBackground(new Color(0, 120, 215));
         todayButton.setForeground(Color.WHITE);
         todayButton.setFocusPainted(false);
         todayButton.setFont(new Font("Arial", Font.BOLD, 14));
         todayButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-
+        
         statsButton.setBackground(new Color(0, 120, 215));
         statsButton.setForeground(Color.WHITE);
         statsButton.setFocusPainted(false);
         statsButton.setFont(new Font("Arial", Font.BOLD, 14));
         statsButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-
+        
         allHabitsButton.setBackground(new Color(0, 120, 215));
         allHabitsButton.setForeground(Color.WHITE);
         allHabitsButton.setFocusPainted(false);
         allHabitsButton.setFont(new Font("Arial", Font.BOLD, 14));
         allHabitsButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-
+        
         Dimension buttonSize = new Dimension(150, 40);
         todayButton.setPreferredSize(buttonSize);
         statsButton.setPreferredSize(buttonSize);
         allHabitsButton.setPreferredSize(buttonSize);
-
+        
         todayButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showTodayPanel();
             }
         });
-
+        
         statsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showStatsPanel();
             }
         });
-
+        
         allHabitsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showAllHabitsPanel();
             }
         });
-
+        
         panel.add(todayButton, gbc);
         gbc.gridy++;
         panel.add(statsButton, gbc);
         gbc.gridy++;
         panel.add(allHabitsButton, gbc);
-
+        
         return panel;
     }
-
+    
+    /**
+     * Creates the top panel of the application interface containing buttons for toggling the sidebar, adding tasks, and navigating back.
+     * The toggleSidebarButton toggles the visibility of the sidebar panel.
+     * The addButton opens the add panel to add new tasks.
+     * The backButton allows navigating back to the previous panel if available.
+     * 
+     * @return The JPanel containing the top panel components.
+     */
     private JPanel createTopPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         toggleSidebarButton = new JButton("☰"); // Unicode for the hamburger icon
         addButton = new JButton("+");
         backButton = new JButton("← "); // Back button with left arrow
         backButton.setEnabled(false); // Initially disabled as there's no previous panel
-
+        
         toggleSidebarButton.setBackground(new Color(103, 146, 103));
         toggleSidebarButton.setForeground(Color.WHITE);
         toggleSidebarButton.setFocusPainted(false);
         toggleSidebarButton.setFont(new Font("Arial", Font.BOLD, 14));
         toggleSidebarButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
-
+        
         addButton.setBackground(new Color(103, 146, 103));
         addButton.setForeground(Color.WHITE);
         addButton.setFocusPainted(false);
@@ -533,7 +527,7 @@ public class Wellnest extends  JFrame  {
                 toggleSidebar();
             }
         });
-
+        
         // Action listener for addButton
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -541,27 +535,24 @@ public class Wellnest extends  JFrame  {
                 openAddPanel();
             }
         });
-
-        // Action listener for backButton
-        backButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                goBack();
-            }
-        });
-
+        
         panel.add(toggleSidebarButton, BorderLayout.WEST);
         panel.add(addButton, BorderLayout.EAST);
         return panel;
-        }
-
+    }
+    
+    /**
+     * Creates the panel for adding tasks, providing options to add a regular habit or a one-time task.
+     *
+     * @return The JPanel containing the components for adding tasks.
+     */
     private JPanel createAddPanel() {
         JPanel panel = new JPanel(new GridLayout(2, 1));
-
+        
         // Create buttons for selecting between regular habit and one-time task
         JButton regularHabitButton = new JButton("Add Regular Habit");
         JButton oneTimeTaskButton = new JButton("Add One-Time Task");
-
+        
         // Attach action listeners to the buttons
         regularHabitButton.addActionListener(new ActionListener() {
             @Override
@@ -569,7 +560,7 @@ public class Wellnest extends  JFrame  {
                 openCalendarPanel();
             }
         });
-
+        
         oneTimeTaskButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -578,31 +569,36 @@ public class Wellnest extends  JFrame  {
                 System.out.println("Add One-Time Task button clicked");
             }
         });
-
+        
         // Add buttons to the panel
         panel.add(regularHabitButton);
         panel.add(oneTimeTaskButton);
-
+        
         return panel;
     }
-
+    
     private void showTodayPanel() {
         switchPanel(todayPanel);
     }
-
+    
     private void showStatsPanel() {
         switchPanel(statsPanel);
     }
-
+    
     private void showAllHabitsPanel() {
         switchPanel(allHabitsPanel);
     }
-
+    
+    /**
+     * Toggles the visibility of the sidebar panel by expanding or collapsing it with a smooth animation.
+     * If the sidebar is currently expanded, it collapses it to a width of 0. If it's collapsed, it expands it to its original width.
+     * The animation is achieved using a Timer object to gradually adjust the width of the sidebar panel.
+     */
     private void toggleSidebar() {
         int targetWidth = isSidebarExpanded ? 0 : sidebarWidth;
         Timer timer = new Timer(10, new ActionListener() {
             int currentWidth = sidebarPanel.getWidth();
-
+            
             @Override
             public void actionPerformed(ActionEvent e) {
                 if ((isSidebarExpanded && currentWidth <= targetWidth) || (!isSidebarExpanded && currentWidth >= targetWidth)) {
@@ -623,10 +619,139 @@ public class Wellnest extends  JFrame  {
         timer.start();
     }
 
-    private void openAddPanel() {
-        setCurrentPanel(createAddPanel());
+    /**
+     * Saves the status of a task to a file.
+     *
+     * This method appends a new entry to the task completion file, consisting of the task's
+     * date, name, and status, separated by "|" (pipe) characters.
+     *
+     * @param date The date of the task in the format of a string.
+     * @param taskName The name of the task.
+     * @param status The status of the task (e.g., "Completed", "Skipped").
+     */
+    private void saveTaskStatus(String date, String taskName, String status) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_COMPLETED_FILE_PATH, true))) {
+            String entry = date + "|" + taskName + "|" + status;
+            writer.write(entry);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
+    /**
+     * Loads tasks from a file into the task database.
+     *
+     * This method reads each line from the tasks file, splits it into parts using "|" (pipe) as the delimiter,
+     * parses the date from the first part, and retrieves the task name from the second part. It then adds the
+     * task to the task database under the corresponding date.
+     *
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
+    private void loadTasksFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                LocalDate date = LocalDate.parse(parts[0]);
+                String task = parts[1];
+                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * Loads task statuses from a file into the task status database.
+     *
+     * This method reads each line from the task completed file, splits it into parts using "|" (pipe) as the delimiter,
+     * and retrieves the date and task name from the first two parts. It then combines the date and task name to form the key,
+     * and extracts the status from the third part. If the line contains all three parts, it adds the key-value pair
+     * (date and task name as key, status as value) to the task status database.
+     *
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
+    private void loadTaskStatusFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String key = parts[0] + "|" + parts[1];
+                    String status = parts[2];
+                    taskStatusDatabase.put(key, status);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Method to load task progress from file.
+     * used in the constructor.
+     */
+    private void loadTaskProgressFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_PROGRESS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                String key = parts[0] + "|" + parts[1];
+                float value = Float.parseFloat(parts[2]);
+                taskProgressDatabase.put(key, value);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Method to save tasks to task.txt file (db).
+     * used in the addTask and removeTask method.
+     * 
+     * It saves the tasks to a file by iterating through the taskDatabase map
+     * where the key is the date and the value is a list of tasks.
+     */
+    private void saveTasksToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE_PATH))) {
+            for (Map.Entry<LocalDate, List<String>> entry : taskDatabase.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<String> tasks = entry.getValue();
+                for (String task : tasks) {
+                    writer.write(date + "|" + task);
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Saves the task progress data to the TASK_PROGRESS_FILE_PATH file.
+     * Writes each entry in the taskProgressDatabase to the file with the format: "date|taskName|progressValue".
+     * If an IOException occurs during the file writing process, it prints the stack trace.
+     */
+    private void saveTaskProgressToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_PROGRESS_FILE_PATH))) {
+            for (Map.Entry<String, Float> entry : taskProgressDatabase.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Retrieves the progress data of a task for a specific date from the tasks.txt file.
+     * 
+     * @param date The date of the task in the format "yyyy-MM-dd".
+     * @param taskName The name of the task.
+     * @return An array containing the progress data: [currentProgress, totalSteps], or [0, 1] if not found.
+    */
     private int[] getTaskProgress(String date, String taskName) {
         String filePath = "tasks.txt"; // Adjust this if the file path is different
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -647,11 +772,25 @@ public class Wellnest extends  JFrame  {
         }
         return new int[]{0, 1}; // Default to 0 progress and 1 step if not found
     }
-
+    
+    /**
+     * Retrieves the status of a task for a specific date from the taskStatusDatabase.
+     * 
+     * @param date The date of the task in the format "yyyy-MM-dd".
+     * @param taskName The name of the task.
+     * @return The status of the task, or null if not found.
+     */
     private String getTaskStatus(String date, String taskName) {
         return taskStatusDatabase.get(date + "|" + taskName);
     }
-    // Method to update task progress in the taskProgress.txt file
+
+    /**
+     * Updates the progress of a task for a specific date in the taskProgress.txt file.
+     * 
+     * @param date The date of the task in the format "yyyy-MM-dd".
+     * @param taskName The name of the task.
+     * @param newProgress The new progress value to be updated.
+     */    
     private void updateTaskProgress(String date, String taskName, float newProgress) {
         String filePath = "taskProgress.txt"; // Adjust this if the file path is different
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -663,7 +802,6 @@ public class Wellnest extends  JFrame  {
                 if (parts.length == 3) {
                     String fileDate = parts[0];
                     String fileTaskName = parts[1];
-                    float progress = Float.parseFloat(parts[2]);
                     if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
                         fileContent.append(date).append("|").append(taskName).append("|").append(newProgress).append("\n");
                         taskFound = true;
@@ -676,7 +814,7 @@ public class Wellnest extends  JFrame  {
             if (!taskFound) {
                 fileContent.append(date).append("|").append(taskName).append("|").append(newProgress).append("\n");
             }
-
+            
             // Write the updated content back to the file
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
                 writer.write(fileContent.toString());
@@ -684,8 +822,15 @@ public class Wellnest extends  JFrame  {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-    // Method to get task progress value from taskProgress.txt file
+    }  
+    
+    /**
+     * Retrieves the progress value of a task for a specific date from the taskProgress.txt file.
+     * 
+     * @param date The date of the task in the format "yyyy-MM-dd".
+     * @param taskName The name of the task.
+     * @return The progress value of the task as a float, or 0.0 if not found or an error occurs.
+     */
     private float getTaskProgressValue(String date, String taskName) {
         String filePath = "taskProgress.txt"; // Adjust this if the file path is different
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -705,7 +850,20 @@ public class Wellnest extends  JFrame  {
         }
         return 0.0f; // Return 0 if not found or error
     }
-
+    
+    private void openAddPanel() {
+        setCurrentPanel(createAddPanel());
+    }
+    
+    /**
+     * Opens a calendar panel to select a date and add a new task.
+     * 
+     * This method creates a calendar panel using the JCalendar component,
+     * allowing the user to select a date. When a date is selected, it prompts
+     * the user to input the details of a new task using a TaskInputDialog.
+     * The dialog is displayed, and upon confirmation, the new task is added
+     * to the application.
+     */
     private void openCalendarPanel() {
         // Create a calendar panel to select the date
         JPanel calendarPanel = new JPanel(new BorderLayout());
@@ -732,12 +890,22 @@ public class Wellnest extends  JFrame  {
         // Show the calendar panel in the add panel
         setCurrentPanel(calendarPanel);
     }
-
+    
+    /**
+     * Calculates the streak count of consecutive task completions.
+     * 
+     * This method calculates the number of consecutive days on which tasks have
+     * been completed. It iterates backward from the current date, checking for
+     * tasks completed on each consecutive day until it encounters a day with no
+     * completed tasks.
+     * 
+     * @return The streak count of consecutive task completions.
+     */
     private int calculateStreakCount() {
         int streakCount = 0;
         LocalDate today = LocalDate.now();
         LocalDate previousDate = today.minusDays(1);
-    
+        
         // Check for consecutive completion of tasks
         while (taskDatabase.containsKey(today) && taskDatabase.containsKey(previousDate)) {
             streakCount++;
@@ -748,6 +916,13 @@ public class Wellnest extends  JFrame  {
         return streakCount;
     }
     
+    /**
+     * Method to remove a task from the panel and the database
+     * used in the removeButton action listener from the createTaskItemPanel method.
+     * @param date of the tast
+     * @param taskName
+     * @param taskPanel
+     */
     private void removeTask(LocalDate date, String taskName, JPanel taskPanel) {
         // Remove the task from the panel
         currentPanel.remove(taskPanel); // Remove task panel from the current panel
@@ -772,6 +947,92 @@ public class Wellnest extends  JFrame  {
         }
     }
 
+    /**
+     * Method to add a task to the task database and refresh the Today panel.
+     * used in the addButton action listener from the TaskInputDialog class.
+     * 
+     * @param date
+     * @param task
+     * @param progress
+     */
+    private void addTask(LocalDate date, String task, int progress) {
+        // Add the task to the task database with its progress
+        String taskWithProgress = task + "|" + progress;
+        taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(taskWithProgress);
+        
+        // Save tasks to file
+        saveTasksToFile();
+        
+        // Refresh the Today panel to reflect the new task
+        refreshTodayPanel();
+    }
+    
+    /**
+     * Refreshes the Today panel by removing all existing components and re-creating it.
+     * 
+     * This method clears all components from the Today panel and then re-creates it
+     * using the {@code createTodayPanel()} method. It is useful for updating the panel
+     * after changes have been made to the tasks or their status.
+     */
+    private void refreshTodayPanel() {
+        todayPanel.removeAll(); // Remove all components from the Today panel
+        todayPanel.add(createTodayPanel()); // Re-create the Today panel
+        todayPanel.revalidate(); // Revalidate the panel to reflect changes
+        todayPanel.repaint(); // Repaint the panel
+    }
+      
+    /**
+     * Sets the current panel to the specified panel.
+     * 
+     * This method replaces the current panel displayed in the homePanel with the
+     * specified panel. It removes the currentPanel, adds the new panel to homePanel,
+     * updates the currentPanel reference, and refreshes the display to reflect the change.
+     * 
+     * @param panel The panel to set as the current panel.
+     */
+    private void setCurrentPanel(JPanel panel) {
+        // Remove currentPanel from homePanel
+        homePanel.remove(currentPanel);
+        // Add new panel to homePanel
+        homePanel.add(panel, BorderLayout.CENTER);
+        // Update currentPanel
+        currentPanel = panel;
+        // Refresh the display
+        homePanel.revalidate();
+        homePanel.repaint();
+    }
+    
+    /**
+     * Switches the current panel to the specified panel.
+     * 
+     * This method replaces the current panel displayed in the homePanel with the
+     * specified panel if it's different from the current one. It removes the currentPanel,
+     * adds the new panel to homePanel, updates the currentPanel reference, enables the
+     * backButton, and refreshes the display to reflect the change.
+     * 
+     * @param newPanel The panel to switch to.
+     */
+    private void switchPanel(JPanel newPanel) {
+        if (newPanel != currentPanel) {
+            homePanel.remove(currentPanel);
+            homePanel.add(newPanel, BorderLayout.CENTER);
+            homePanel.revalidate();
+            homePanel.repaint();
+            panelStack.push(currentPanel);
+            currentPanel = newPanel;
+            backButton.setEnabled(true);
+        }
+    }
+    
+    /**
+     * A dialog window for adding a new task.
+     * 
+     * This class provides a dialog window with input fields for specifying
+     * the task name and the number of times to complete the task. It allows
+     * the user to input these details and add a new task to the application.
+     * 
+     * @author: Earl
+     */
     private class TaskInputDialog extends JDialog {
         private LocalDate selectedDate;
     
@@ -780,6 +1041,11 @@ public class Wellnest extends  JFrame  {
         private JButton addButton;
         private JButton cancelButton;
     
+        /**
+         * Constructs a new TaskInputDialog with the specified selected date.
+         * 
+         * @param selectedDate The selected date for adding the task.
+         */
         public TaskInputDialog(LocalDate selectedDate) {
             this.selectedDate = selectedDate;
             setTitle("Add Task");
@@ -791,6 +1057,9 @@ public class Wellnest extends  JFrame  {
             initComponents();
         }
     
+        /**
+         * Initializes the components of the dialog window.
+         */
         private void initComponents() {
             JPanel panel = new JPanel(new BorderLayout());
             panel.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -842,58 +1111,4 @@ public class Wellnest extends  JFrame  {
         }
         
     }
-
-    private void addTask(LocalDate date, String task, int progress) {
-        // Add the task to the task database with its progress
-        String taskWithProgress = task + "|" + progress;
-        taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(taskWithProgress);
-        
-        // Save tasks to file
-        saveTasksToFile();
-
-        // Refresh the Today panel to reflect the new task
-        refreshTodayPanel();
-    }
-    
-    private void refreshTodayPanel() {
-        todayPanel.removeAll(); // Remove all components from the Today panel
-        todayPanel.add(createTodayPanel()); // Re-create the Today panel
-        todayPanel.revalidate(); // Revalidate the panel to reflect changes
-        todayPanel.repaint(); // Repaint the panel
-    }
-
-    private void goBack() {
-        if (!panelStack.isEmpty()) {
-            JPanel previousPanel = panelStack.pop();
-            setCurrentPanel(previousPanel);
-            if (panelStack.isEmpty()) {
-                backButton.setEnabled(false); // Disable backButton if there's no previous panel
-            }
-        }
-    }
-
-    private void setCurrentPanel(JPanel panel) {
-        // Remove currentPanel from homePanel
-        homePanel.remove(currentPanel);
-        // Add new panel to homePanel
-        homePanel.add(panel, BorderLayout.CENTER);
-        // Update currentPanel
-        currentPanel = panel;
-        // Refresh the display
-        homePanel.revalidate();
-        homePanel.repaint();
-    }
-
-    private void switchPanel(JPanel newPanel) {
-        if (newPanel != currentPanel) {
-            homePanel.remove(currentPanel);
-            homePanel.add(newPanel, BorderLayout.CENTER);
-            homePanel.revalidate();
-            homePanel.repaint();
-            panelStack.push(currentPanel);
-            currentPanel = newPanel;
-            backButton.setEnabled(true);
-        }
-    }
-
 }
