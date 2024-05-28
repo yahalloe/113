@@ -90,7 +90,7 @@ public class Wellnest extends  JFrame  {
         panel.setBackground(Color.WHITE);
     
         // Get the tasks for the current date
-        List<String> tasksForCurrentDate = taskDatabase.get(currentDate);
+        List<String> tasksForCurrentDate = taskDatabase.getOrDefault(currentDate, new ArrayList<>());
     
         // Create a panel to hold the calendar and tasks
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -134,7 +134,7 @@ public class Wellnest extends  JFrame  {
         taskPanel.setBackground(Color.WHITE);
     
         // Add task panels to the task panel
-        if (tasksForCurrentDate != null && !tasksForCurrentDate.isEmpty()) {
+        if (!tasksForCurrentDate.isEmpty()) {
             for (String task : tasksForCurrentDate) {
                 JPanel taskItemPanel = createTaskItemPanel(currentDate.toString(), task);
                 taskPanel.add(taskItemPanel);
@@ -152,6 +152,15 @@ public class Wellnest extends  JFrame  {
         panel.add(mainPanel, BorderLayout.CENTER);
     
         return panel;
+    }
+
+    // Method to update the "Today" panel
+    private void updateTodayPanel() {
+        homePanel.remove(todayPanel);
+        todayPanel = createTodayPanel();
+        homePanel.add(todayPanel, BorderLayout.CENTER);
+        homePanel.revalidate();
+        homePanel.repaint();
     }
     
     private JPanel createTaskItemPanel(String date, String taskName) {
@@ -373,6 +382,7 @@ public class Wellnest extends  JFrame  {
         }
 
     private void showTodayPanel() {
+        updateTodayPanel();
         switchPanel(todayPanel);
     }
 
