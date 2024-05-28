@@ -165,6 +165,7 @@ public class Wellnest extends  JFrame  {
     
     private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel(new BorderLayout());
+        taskPanel.setBackground(Color.WHITE);
         
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
@@ -177,6 +178,28 @@ public class Wellnest extends  JFrame  {
         JButton completedButton = new JButton("Completed");
         JButton skippedButton = new JButton("Skipped");
         JButton button1 = new JButton("1");
+        JButton removeButton = new JButton("Remove Task");
+        
+        completedButton.setBackground(new Color(51,122,183));
+        completedButton.setForeground(Color.WHITE);
+        completedButton.setFocusPainted(false);
+        completedButton.setFont(new Font("Arial", Font.BOLD, 14));
+        
+        skippedButton.setBackground(new Color(51,122,183));
+        skippedButton.setForeground(Color.WHITE);
+        skippedButton.setFocusPainted(false);
+        skippedButton.setFont(new Font("Arial", Font.BOLD, 14));
+
+        button1.setBackground(new Color(51,122,183));
+        button1.setForeground(Color.WHITE);
+        button1.setFocusPainted(false);
+        button1.setFont(new Font("Arial", Font.BOLD, 14));
+
+        removeButton.setBackground(new Color(255,105,97));
+        removeButton.setForeground(Color.WHITE);
+        removeButton.setFocusPainted(false);
+        removeButton.setFont(new Font("Arial", Font.BOLD, 14));
+        
         
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
@@ -245,25 +268,22 @@ public class Wellnest extends  JFrame  {
             float progressValue = Float.parseFloat(progressField.getText());
             if (progressValue < 100) {
                 float increment = 100.0f / totalSteps;
-        
+                
                 // Add the increment to the current value
                 float newProgressValue = progressValue + increment;
-        
+                
                 // Ensure newProgressValue doesn't exceed 100
                 if (newProgressValue > 100.0f) {
                     newProgressValue = 100.0f;
                 }
-        
-                // Update the progress in the taskProgress.txt file
-                updateTaskProgress(date, taskName, newProgressValue);
-        
+                
                 // Update the JTextField with the new progress
                 progressField.setText(String.valueOf(newProgressValue));
-        
+                
                 // Set the progress bar's value and update its display text with float precision
                 progressBar.setValue((int) newProgressValue);
                 progressBar.setString(String.format("%.1f%%", newProgressValue)); // Update progress text with one decimal place
-        
+                
                 // Check if the progress is now complete
                 if (newProgressValue >= 100.0f) {
                     JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
@@ -275,10 +295,12 @@ public class Wellnest extends  JFrame  {
                     taskPanel.revalidate();
                     taskPanel.repaint();
                     saveTaskStatus(date, taskName, "Completed");
-                    // Save task progress status
-                    taskProgressDatabase.put(date + "|" + taskName, newProgressValue);
-                    saveTaskProgressToFile();
-                } else {
+                }
+                
+                // Save task progress status only if it's not yet completed
+                if (newProgressValue < 100.0f) {
+                    // Update the progress in the taskProgress.txt file
+                    updateTaskProgress(date, taskName, newProgressValue);
                     // Save task progress status
                     taskProgressDatabase.put(date + "|" + taskName, newProgressValue);
                     saveTaskProgressToFile();
@@ -286,11 +308,17 @@ public class Wellnest extends  JFrame  {
             }
         });
         
+        removeButton.addActionListener(e -> {
+            // Call the removeTask method with date, taskName, and taskPanel
+            removeTask(LocalDate.parse(date), taskName, taskPanel);
+        });
+
         // Add components to the button panel
         buttonPanel.add(completedButton);
         buttonPanel.add(skippedButton);
         buttonPanel.add(button1);
         buttonPanel.add(progressBar);
+        taskPanel.add(removeButton, BorderLayout.SOUTH); // Add the button to the bottom of the task panel
         
         // Add the button panel to the task panel
         taskPanel.add(buttonPanel, BorderLayout.CENTER);
@@ -381,12 +409,20 @@ public class Wellnest extends  JFrame  {
     }
 
     private JPanel createStatsPanel() {
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
-        JLabel label = new JLabel("Stats Panel");
-
-
-        panel.add(label);
+    
+        // Calculate streak count
+        int streakCount = calculateStreakCount();
+    
+        // Create streak label
+        JLabel streakLabel = new JLabel("Current Streak: " + streakCount);
+        streakLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        streakLabel.setFont(new Font("Arial", Font.BOLD, 16));
+    
+        // Add streak label to the panel
+        panel.add(streakLabel, BorderLayout.CENTER);
+    
         return panel;
     }
 
@@ -416,6 +452,25 @@ public class Wellnest extends  JFrame  {
         todayButton = new JButton("Today");
         statsButton = new JButton("Stats");
         allHabitsButton = new JButton("All Habits");
+
+
+        todayButton.setBackground(new Color(0, 120, 215));
+        todayButton.setForeground(Color.WHITE);
+        todayButton.setFocusPainted(false);
+        todayButton.setFont(new Font("Arial", Font.BOLD, 14));
+        todayButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+
+        statsButton.setBackground(new Color(0, 120, 215));
+        statsButton.setForeground(Color.WHITE);
+        statsButton.setFocusPainted(false);
+        statsButton.setFont(new Font("Arial", Font.BOLD, 14));
+        statsButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+
+        allHabitsButton.setBackground(new Color(0, 120, 215));
+        allHabitsButton.setForeground(Color.WHITE);
+        allHabitsButton.setFocusPainted(false);
+        allHabitsButton.setFont(new Font("Arial", Font.BOLD, 14));
+        allHabitsButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
 
         Dimension buttonSize = new Dimension(150, 40);
         todayButton.setPreferredSize(buttonSize);
@@ -459,6 +514,18 @@ public class Wellnest extends  JFrame  {
         backButton = new JButton("← "); // Back button with left arrow
         backButton.setEnabled(false); // Initially disabled as there's no previous panel
 
+        toggleSidebarButton.setBackground(new Color(103, 146, 103));
+        toggleSidebarButton.setForeground(Color.WHITE);
+        toggleSidebarButton.setFocusPainted(false);
+        toggleSidebarButton.setFont(new Font("Arial", Font.BOLD, 14));
+        toggleSidebarButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+
+        addButton.setBackground(new Color(103, 146, 103));
+        addButton.setForeground(Color.WHITE);
+        addButton.setFocusPainted(false);
+        addButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        
         // Action listener for toggleSidebarButton
         toggleSidebarButton.addActionListener(new ActionListener() {
             @Override
@@ -666,6 +733,45 @@ public class Wellnest extends  JFrame  {
         setCurrentPanel(calendarPanel);
     }
 
+    private int calculateStreakCount() {
+        int streakCount = 0;
+        LocalDate today = LocalDate.now();
+        LocalDate previousDate = today.minusDays(1);
+    
+        // Check for consecutive completion of tasks
+        while (taskDatabase.containsKey(today) && taskDatabase.containsKey(previousDate)) {
+            streakCount++;
+            today = today.minusDays(1);
+            previousDate = previousDate.minusDays(1);
+        }
+    
+        return streakCount;
+    }
+    
+    private void removeTask(LocalDate date, String taskName, JPanel taskPanel) {
+        // Remove the task from the panel
+        currentPanel.remove(taskPanel); // Remove task panel from the current panel
+        currentPanel.revalidate(); // Revalidate the panel
+        currentPanel.repaint(); // Repaint the panel
+    
+        // Remove the task from the database
+        List<String> tasksForDate = taskDatabase.get(date);
+        if (tasksForDate != null) {
+            tasksForDate.remove(taskName); // Remove the task from the list
+            if (tasksForDate.isEmpty()) {
+                taskDatabase.remove(date); // Remove the date entry if there are no tasks left for that date
+                if (currentPanel.getComponentCount() == 0) {
+                    // If the current panel is empty, don't remove it
+                    refreshTodayPanel();
+                }
+            }
+            saveTasksToFile(); // Save the updated task database to file
+    
+            // Refresh the Today panel
+            refreshTodayPanel();
+        }
+    }
+
     private class TaskInputDialog extends JDialog {
         private LocalDate selectedDate;
     
@@ -712,6 +818,18 @@ public class Wellnest extends  JFrame  {
             cancelButton.addActionListener(e -> {
                 dispose();
             });
+
+            addButton.setBackground(new Color(0, 120, 215));
+            addButton.setForeground(Color.WHITE);
+            addButton.setFocusPainted(false);
+            addButton.setFont(new Font("Arial", Font.BOLD, 14));
+            addButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+
+            cancelButton.setBackground(new Color(0, 120, 215));
+            cancelButton.setForeground(Color.WHITE);
+            cancelButton.setFocusPainted(false);
+            cancelButton.setFont(new Font("Arial", Font.BOLD, 14));
+            cancelButton.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
         
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             buttonPanel.add(addButton);
