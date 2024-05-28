@@ -173,6 +173,14 @@ public class Wellnest extends  JFrame  {
             e.printStackTrace();
         }
     }
+    // Method to save task progress to file
+    private void saveTaskProgressToFile(String date, String taskName, float progress) {
+        try (FileWriter writer = new FileWriter("TaskProgress.txt", true)) {
+            writer.write(date + "|" + taskName + "|" + progress + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
     // Method to save task progress to file
     private void saveTaskProgressToFile() {
@@ -246,10 +254,11 @@ public class Wellnest extends  JFrame  {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\|");
-                if (parts.length == 3) {
+                if (parts.length == 4) {
                     String fileDate = parts[0];
                     String fileTaskName = parts[1];
                     int totalSteps = Integer.parseInt(parts[2]);
+                    String taskType = parts[3];
                     if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
                         return new int[]{0, totalSteps}; // Progress is initially 0, and the total steps
                     }
@@ -260,6 +269,23 @@ public class Wellnest extends  JFrame  {
         }
         return new int[]{0, 1}; // Default to 0 progress and 1 step if not found
     }
+    
+    // Method to get progress value from tasks.txt
+    // private int getProgressFromFile(String taskName) {
+    //     // Assuming tasks.txt contains progress data for each task
+    //     try (BufferedReader reader = new BufferedReader(new FileReader("tasks.txt"))) {
+    //         String line;
+    //         while ((line = reader.readLine()) != null) {
+    //             String[] parts = line.split("\\|");
+    //             if (parts.length == 2 && parts[0].equals(taskName)) {
+    //                 return Integer.parseInt(parts[1]);
+    //             }
+    //         }
+    //     } catch (IOException e) {
+    //         e.printStackTrace();
+    //     }
+    //     return 0;
+    // }
 
     //-----------------------------
     //-----   Create Panel   ------
@@ -342,40 +368,40 @@ public class Wellnest extends  JFrame  {
     // Task Item
     private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel(new BorderLayout());
-        
+
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
         taskPanel.add(nameLabel, BorderLayout.NORTH);
-        
+
         // Create a panel for the buttons and progress bar
         JPanel buttonPanel = new JPanel(new GridLayout(1, 4)); // 1 row and 4 columns
-        
+
         // Create buttons for the task item
         JButton completedButton = new JButton("Completed");
         JButton skippedButton = new JButton("Skipped");
         JButton button1 = new JButton("1");
-        
+
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
-        
+
         // Create a JTextField to store the float progress value
         JTextField progressField = new JTextField("0.0");
         progressField.setEditable(false);
-        
+
         // Get progress value from the database
         float initialProgressValue = getTaskProgressValue(date, taskName);
         progressBar.setValue((int) initialProgressValue);
         progressBar.setString(String.format("%.1f%%", initialProgressValue));
         progressField.setText(String.valueOf(initialProgressValue));
-        
+
         // Get total steps from the database
         int[] progressData = getTaskProgress(date, taskName);
         int totalSteps = progressData[1];
-        
+
         // Get the current task status from the database
         String taskStatus = getTaskStatus(date, taskName);
-        
+
         // If the initial progress is 100% or status is "Completed", disable the buttons and add completion status
         if (initialProgressValue >= 100.0f || "Completed".equals(taskStatus)) {
             completedButton.setEnabled(false);
@@ -390,7 +416,7 @@ public class Wellnest extends  JFrame  {
             JLabel statusLabel = new JLabel("Task Skipped", SwingConstants.CENTER);
             taskPanel.add(statusLabel, BorderLayout.SOUTH);
         }
-        
+
         // Add action listeners to the buttons
         completedButton.addActionListener(e -> {
             progressBar.setValue(100); // Set progress to 100%
@@ -404,9 +430,9 @@ public class Wellnest extends  JFrame  {
             taskPanel.repaint();
             saveTaskStatus(date, taskName, "Completed");
             taskProgressDatabase.put(date + "|" + taskName, 100.0f);
-            saveTaskProgressToFile();
+            saveTaskProgressToFile(date, taskName, 100.0f); // Save progress to file
         });
-        
+
         skippedButton.addActionListener(e -> {
             JLabel statusLabel = new JLabel("Task Skipped", SwingConstants.CENTER);
             taskPanel.add(statusLabel, BorderLayout.SOUTH);
@@ -417,10 +443,20 @@ public class Wellnest extends  JFrame  {
             taskPanel.repaint();
             saveTaskStatus(date, taskName, "Skipped");
         });
-        
+
         button1.addActionListener(e -> {
             float currentProgress = progressBar.getValue();
-            float newProgress = calculateProgress(date, taskName, totalSteps);
+        
+            // Calculate the increment
+            float increment = 100.0f / totalSteps;
+        
+            // Calculate the new progress value
+            float newProgress = currentProgress + increment;
+        
+            // Ensure the new progress value doesn't exceed 100
+            if (newProgress > 100.0f) {
+                newProgress = 100.0f;
+            }
             
             // Update the progress in the taskProgress.txt file
             updateTaskProgress(date, taskName, newProgress);
@@ -451,17 +487,17 @@ public class Wellnest extends  JFrame  {
                 taskProgressDatabase.put(date + "|" + taskName, newProgress);
                 saveTaskProgressToFile();
             }
-        });     
-        
+        });
+
         // Add components to the button panel
         buttonPanel.add(completedButton);
         buttonPanel.add(skippedButton);
         buttonPanel.add(button1);
         buttonPanel.add(progressBar);
-        
+
         // Add the button panel to the task panel
         taskPanel.add(buttonPanel, BorderLayout.CENTER);
-        
+
         return taskPanel;
     }
     // Stats Panel
@@ -859,21 +895,4 @@ public class Wellnest extends  JFrame  {
     //-----   Calculation    ------
     //-----------------------------
 
-    private float calculateProgress(String date, String taskName, int totalSteps) {
-        // Get the current progress value from TaskProgress.txt
-        float currentProgress = getTaskProgressValue(date, taskName);
-    
-        // Calculate the increment
-        float increment = 100.0f / totalSteps;
-    
-        // Calculate the new progress value
-        float newProgress = currentProgress + increment;
-    
-        // Ensure the new progress value doesn't exceed 100
-        if (newProgress > 100.0f) {
-            newProgress = 100.0f;
-        }
-    
-        return newProgress;
-    }
 }
