@@ -37,13 +37,17 @@ public class Wellnest extends  JFrame  {
     private Stack<JPanel> panelStack; // Stack to keep track of panels
     private JPanel currentPanel;
     private LocalDate currentDate; // Variable to store the current date
+    private Map<String, Float> taskProgressDatabase;
+    private Map<String, String> taskStatusDatabase;
 
     private int sidebarWidth = 200;
     private boolean isSidebarExpanded = true;
 
     // File path for the tasks database
     private static final String TASKS_FILE_PATH = "tasks.txt";
-
+    private static final String TASK_COMPLETED_FILE_PATH = "TaskCompleted.txt";
+    private static final String TASK_PROGRESS_FILE_PATH = "TaskProgress.txt";
+    
     // Task database
     private Map<LocalDate, List<String>> taskDatabase;
 
@@ -54,12 +58,17 @@ public class Wellnest extends  JFrame  {
 
         // Initialize task database
         taskDatabase = new HashMap<>();
+        taskStatusDatabase = new HashMap<>();
+        taskProgressDatabase = new HashMap<>();
 
         // Load tasks from file
         loadTasksFromFile();
+        loadTaskProgressFromFile();
+        loadTaskStatusFromFile();
 
         // Initialize panel stack
         panelStack = new Stack<>();
+        
 
         // Get the current date
         currentDate = LocalDate.now();
@@ -165,39 +174,55 @@ public class Wellnest extends  JFrame  {
     
     private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel(new BorderLayout());
-    
+        
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
         taskPanel.add(nameLabel, BorderLayout.NORTH);
-    
+        
         // Create a panel for the buttons and progress bar
         JPanel buttonPanel = new JPanel(new GridLayout(1, 4)); // 1 row and 4 columns
-    
+        
         // Create buttons for the task item
         JButton completedButton = new JButton("Completed");
         JButton skippedButton = new JButton("Skipped");
         JButton button1 = new JButton("1");
-    
+        
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
-        progressBar.setValue(0); // Set initial value
-        progressBar.setString("0%"); // Set initial text
-
+        
         // Create a JTextField to store the float progress value
         JTextField progressField = new JTextField("0.0");
         progressField.setEditable(false);
-    
+        
         // Get progress value from the database
+        float initialProgressValue = getTaskProgressValue(date, taskName);
+        progressBar.setValue((int) initialProgressValue);
+        progressBar.setString(String.format("%.1f%%", initialProgressValue));
+        progressField.setText(String.valueOf(initialProgressValue));
+        
+        // Get total steps from the database
         int[] progressData = getTaskProgress(date, taskName);
-        int currentProgress = progressData[0];
         int totalSteps = progressData[1];
-        progressBar.setValue(currentProgress); // Set initial value
-        progressBar.setString(currentProgress + "%"); // Set initial text
-
-        // Calculate the increment value based on the total steps
-        float incrementValue = 100.0f / totalSteps;
-    
+        
+        // Get the current task status from the database
+        String taskStatus = getTaskStatus(date, taskName);
+        
+        // If the initial progress is 100% or status is "Completed", disable the buttons and add completion status
+        if (initialProgressValue >= 100.0f || "Completed".equals(taskStatus)) {
+            completedButton.setEnabled(false);
+            skippedButton.setEnabled(false);
+            button1.setEnabled(false);
+            JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
+            taskPanel.add(statusLabel, BorderLayout.SOUTH);
+        } else if ("Skipped".equals(taskStatus)) {
+            completedButton.setEnabled(false);
+            skippedButton.setEnabled(false);
+            button1.setEnabled(false);
+            JLabel statusLabel = new JLabel("Task Skipped", SwingConstants.CENTER);
+            taskPanel.add(statusLabel, BorderLayout.SOUTH);
+        }
+        
         // Add action listeners to the buttons
         completedButton.addActionListener(e -> {
             progressBar.setValue(100); // Set progress to 100%
@@ -209,8 +234,11 @@ public class Wellnest extends  JFrame  {
             taskPanel.add(statusLabel, BorderLayout.SOUTH);
             taskPanel.revalidate();
             taskPanel.repaint();
+            saveTaskStatus(date, taskName, "Completed");
+            taskProgressDatabase.put(date + "|" + taskName, 100.0f);
+            saveTaskProgressToFile();
         });
-    
+        
         skippedButton.addActionListener(e -> {
             JLabel statusLabel = new JLabel("Task Skipped", SwingConstants.CENTER);
             taskPanel.add(statusLabel, BorderLayout.SOUTH);
@@ -219,59 +247,77 @@ public class Wellnest extends  JFrame  {
             button1.setEnabled(false);
             taskPanel.revalidate();
             taskPanel.repaint();
+            saveTaskStatus(date, taskName, "Skipped");
         });
-    
+        
         button1.addActionListener(e -> {
-            float currentValue = Float.parseFloat(progressField.getText());
-            if (currentValue < 100) {
+            float progressValue = Float.parseFloat(progressField.getText());
+            if (progressValue < 100) {
                 float increment = 100.0f / totalSteps;
-
+        
                 // Add the increment to the current value
-                float newProgress = currentValue + increment;
-
-                // Ensure newProgress doesn't exceed 100
-                if (newProgress > 100.0f) {
-                    newProgress = 100.0f;
+                float newProgressValue = progressValue + increment;
+        
+                // Ensure newProgressValue doesn't exceed 100
+                if (newProgressValue > 100.0f) {
+                    newProgressValue = 100.0f;
                 }
-
-                //Check for Error
-                System.out.println("Current Value: " + currentValue);
-                System.out.println("Increment: " + increment);
-                System.out.println("New Progress: " + newProgress);
-
+        
+                // Update the progress in the taskProgress.txt file
+                updateTaskProgress(date, taskName, newProgressValue);
+        
                 // Update the JTextField with the new progress
-                progressField.setText(String.valueOf(newProgress));
-    
+                progressField.setText(String.valueOf(newProgressValue));
+        
                 // Set the progress bar's value and update its display text with float precision
-                progressBar.setValue((int) newProgress);
-                progressBar.setString(String.format("%.1f%%", newProgress)); // Update progress text with one decimal place
-    
+                progressBar.setValue((int) newProgressValue);
+                progressBar.setString(String.format("%.1f%%", newProgressValue)); // Update progress text with one decimal place
+        
                 // Check if the progress is now complete
-                if (newProgress >= 100.0f) {
+                if (newProgressValue >= 100.0f) {
                     JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
                     taskPanel.add(statusLabel, BorderLayout.SOUTH);
                     completedButton.setEnabled(false);
                     skippedButton.setEnabled(false);
                     button1.setEnabled(false);
+                    // Repaint the task panel
+                    taskPanel.revalidate();
+                    taskPanel.repaint();
+                    saveTaskStatus(date, taskName, "Completed");
+                    // Save task progress status
+                    taskProgressDatabase.put(date + "|" + taskName, newProgressValue);
+                    saveTaskProgressToFile();
+                } else {
+                    // Save task progress status
+                    taskProgressDatabase.put(date + "|" + taskName, newProgressValue);
+                    saveTaskProgressToFile();
                 }
-    
-                // Repaint the task panel
-                taskPanel.revalidate();
-                taskPanel.repaint();
             }
         });
-    
+        
         // Add components to the button panel
         buttonPanel.add(completedButton);
         buttonPanel.add(skippedButton);
         buttonPanel.add(button1);
         buttonPanel.add(progressBar);
-    
+        
         // Add the button panel to the task panel
         taskPanel.add(buttonPanel, BorderLayout.CENTER);
-    
+        
         return taskPanel;
     }
+    
+    // Method to save task status
+    private void saveTaskStatus(String date, String taskName, String status) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_COMPLETED_FILE_PATH, true))) {
+            String entry = date + "|" + taskName + "|" + status;
+            writer.write(entry);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     
     private JPanel createStatsPanel() {
         JPanel panel = new JPanel();
@@ -455,42 +501,76 @@ public class Wellnest extends  JFrame  {
     }
 
     // Method to load tasks from file
-private void loadTasksFromFile() {
-    try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split("\\|");
-            LocalDate date = LocalDate.parse(parts[0]);
-            String task = parts[1];
-            taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
+    private void loadTasksFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASKS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                LocalDate date = LocalDate.parse(parts[0]);
+                String task = parts[1];
+                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    } catch (IOException e) {
-        e.printStackTrace();
     }
-}
 
-private int[] getTaskProgress(String date, String taskName) {
-    String filePath = "tasks.txt"; // Adjust this if the file path is different
-    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split("\\|");
-            if (parts.length == 3) {
-                String fileDate = parts[0];
-                String fileTaskName = parts[1];
-                int totalSteps = Integer.parseInt(parts[2]);
-                if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
-                    return new int[]{0, totalSteps}; // Progress is initially 0, and the total steps
+    private void loadTaskStatusFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String key = parts[0] + "|" + parts[1];
+                    String status = parts[2];
+                    taskStatusDatabase.put(key, status);
                 }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    } catch (IOException e) {
-        e.printStackTrace();
     }
-    return new int[]{0, 1}; // Default to 0 progress and 1 step if not found
-}
 
+    // Load task progress from file
+    private void loadTaskProgressFromFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_PROGRESS_FILE_PATH))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                String key = parts[0] + "|" + parts[1];
+                float value = Float.parseFloat(parts[2]);
+                taskProgressDatabase.put(key, value);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private int[] getTaskProgress(String date, String taskName) {
+        String filePath = "tasks.txt"; // Adjust this if the file path is different
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String fileDate = parts[0];
+                    String fileTaskName = parts[1];
+                    int totalSteps = Integer.parseInt(parts[2]);
+                    if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
+                        return new int[]{0, totalSteps}; // Progress is initially 0, and the total steps
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new int[]{0, 1}; // Default to 0 progress and 1 step if not found
+    }
+
+    private String getTaskStatus(String date, String taskName) {
+        return taskStatusDatabase.get(date + "|" + taskName);
+    }
+    
 
     // Method to save tasks to file
     private void saveTasksToFile() {
@@ -506,6 +586,75 @@ private int[] getTaskProgress(String date, String taskName) {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    // Method to save task progress to file
+    private void saveTaskProgressToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_PROGRESS_FILE_PATH))) {
+            for (Map.Entry<String, Float> entry : taskProgressDatabase.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Method to update task progress in the taskProgress.txt file
+    private void updateTaskProgress(String date, String taskName, float newProgress) {
+        String filePath = "taskProgress.txt"; // Adjust this if the file path is different
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            StringBuilder fileContent = new StringBuilder();
+            boolean taskFound = false;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String fileDate = parts[0];
+                    String fileTaskName = parts[1];
+                    float progress = Float.parseFloat(parts[2]);
+                    if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
+                        fileContent.append(date).append("|").append(taskName).append("|").append(newProgress).append("\n");
+                        taskFound = true;
+                    } else {
+                        fileContent.append(line).append("\n");
+                    }
+                }
+            }
+            // If task not found, add it to the file
+            if (!taskFound) {
+                fileContent.append(date).append("|").append(taskName).append("|").append(newProgress).append("\n");
+            }
+
+            // Write the updated content back to the file
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                writer.write(fileContent.toString());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // Method to get task progress value from taskProgress.txt file
+    private float getTaskProgressValue(String date, String taskName) {
+        String filePath = "taskProgress.txt"; // Adjust this if the file path is different
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length == 3) {
+                    String fileDate = parts[0];
+                    String fileTaskName = parts[1];
+                    if (fileDate.equals(date) && fileTaskName.equals(taskName)) {
+                        return Float.parseFloat(parts[2]);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0.0f; // Return 0 if not found or error
     }
 
     private void openCalendarPanel() {
@@ -557,40 +706,41 @@ private int[] getTaskProgress(String date, String taskName) {
         private void initComponents() {
             JPanel panel = new JPanel(new BorderLayout());
             panel.setBorder(new EmptyBorder(10, 10, 10, 10));
-    
+        
             JLabel nameLabel = new JLabel("Task Name:");
             taskNameField = new JTextField(15);
-    
+        
             JLabel progressLabel = new JLabel("Times to Complete:");
-            SpinnerModel spinnerModel = new SpinnerNumberModel(0, 0, 100, 1);
+            SpinnerModel spinnerModel = new SpinnerNumberModel(1, 1, 100, 1); // Set minimum value to 0
             progressSpinner = new JSpinner(spinnerModel);
-    
+        
             JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
             inputPanel.add(nameLabel);
             inputPanel.add(taskNameField);
             inputPanel.add(progressLabel);
             inputPanel.add(progressSpinner);
-    
+        
             addButton = new JButton("Add");
             addButton.addActionListener(e -> {
                 addTask(selectedDate, taskNameField.getText(), (int) progressSpinner.getValue());
                 dispose();
             });
-    
+        
             cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(e -> {
                 dispose();
             });
-    
+        
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             buttonPanel.add(addButton);
             buttonPanel.add(cancelButton);
-    
+        
             panel.add(inputPanel, BorderLayout.CENTER);
             panel.add(buttonPanel, BorderLayout.SOUTH);
-    
+        
             add(panel);
         }
+        
     }
 
     private void addTask(LocalDate date, String task, int progress) {
@@ -600,8 +750,18 @@ private int[] getTaskProgress(String date, String taskName) {
         
         // Save tasks to file
         saveTasksToFile();
+
+        // Refresh the Today panel to reflect the new task
+        refreshTodayPanel();
     }
+
     
+    private void refreshTodayPanel() {
+        todayPanel.removeAll(); // Remove all components from the Today panel
+        todayPanel.add(createTodayPanel()); // Re-create the Today panel
+        todayPanel.revalidate(); // Revalidate the panel to reflect changes
+        todayPanel.repaint(); // Repaint the panel
+    }
 
     private void goBack() {
         if (!panelStack.isEmpty()) {
