@@ -16,7 +16,6 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Stack;
 import java.io.*;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -173,6 +172,12 @@ public class Wellnest extends  JFrame  {
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
+        progressBar.setValue(0); // Set initial value
+        progressBar.setString("0%"); // Set initial text
+
+        // Create a JTextField to store the float progress value
+        JTextField progressField = new JTextField("0.0");
+        progressField.setEditable(false);
     
         // Get progress value from the database
         int[] progressData = getTaskProgress(date, taskName);
@@ -208,27 +213,30 @@ public class Wellnest extends  JFrame  {
         });
     
         button1.addActionListener(e -> {
-            float currentValue = progressBar.getValue();
+            float currentValue = Float.parseFloat(progressField.getText());
             if (currentValue < 100) {
-                // Calculate the increment value based on the total steps
                 float increment = 100.0f / totalSteps;
-                
+
                 // Add the increment to the current value
-                float newProgress = currentValue + incrementValue;
-        
-                System.out.println(increment);
-                System.out.println(currentValue);
-                System.out.println(newProgress);
-                
+                float newProgress = currentValue + increment;
+
                 // Ensure newProgress doesn't exceed 100
                 if (newProgress > 100.0f) {
                     newProgress = 100.0f;
                 }
-        
+
+                //Check for Error
+                System.out.println("Current Value: " + currentValue);
+                System.out.println("Increment: " + increment);
+                System.out.println("New Progress: " + newProgress);
+
+                // Update the JTextField with the new progress
+                progressField.setText(String.valueOf(newProgress));
+    
                 // Set the progress bar's value and update its display text with float precision
                 progressBar.setValue((int) newProgress);
                 progressBar.setString(String.format("%.1f%%", newProgress)); // Update progress text with one decimal place
-        
+    
                 // Check if the progress is now complete
                 if (newProgress >= 100.0f) {
                     JLabel statusLabel = new JLabel("Task Completed", SwingConstants.CENTER);
@@ -237,14 +245,12 @@ public class Wellnest extends  JFrame  {
                     skippedButton.setEnabled(false);
                     button1.setEnabled(false);
                 }
-        
+    
                 // Repaint the task panel
                 taskPanel.revalidate();
                 taskPanel.repaint();
             }
         });
-        
-        
     
         // Add components to the button panel
         buttonPanel.add(completedButton);
