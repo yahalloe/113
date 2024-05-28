@@ -1,19 +1,4 @@
-2024-05-28,watch anime,Completed
-2024-05-28|drink anime|Completed
-2024-05-28|Name|1|Completed
-2024-05-28|edit 1|Completed
-2024-05-28|1234567|Completed
-2024-05-28|qwerty|Skipped
-2024-05-28|yahallo|Skipped
-2024-05-28|america yaaa|Completed
-2024-05-28|ayaya|Completed
-2024-05-28|jog|1|Completed
-2024-05-28||1|Skipped
-2024-05-28||Completed
-2024-05-28|jog|Skipped
-2024-05-28||1|Skipped
-2024-05-28||1|Skipped
-2024-05-28|eat|7|Completed
-2024-05-28|eat|Skipped
-2024-05-28|New Task|9|Completed
+2024-05-28|New Task|11|Regular|Completed
 2024-05-28|New Task|Completed
+2024-05-28|New Task 2|7|Regular|Completed
+2024-05-28|New Task 2|Completed
