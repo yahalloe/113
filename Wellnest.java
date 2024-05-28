@@ -558,7 +558,7 @@ public class Wellnest extends  JFrame  {
     
     private void showStatsPanel() {
         // Get the stats panel
-        JPanel statsPanel = createStatsPanel();
+        statsPanel = createStatsPanel();
         
         // Update the task count label
         JLabel taskCountLabel = (JLabel) statsPanel.getComponent(1); // Assuming taskCountLabel is the second component
@@ -922,6 +922,7 @@ public class Wellnest extends  JFrame  {
         
         return completedTasks;
     }
+    
     private void updateTaskCountLabel(JLabel taskCountLabel) {
         // Get the count of completed tasks and update the label text
         int completedTasks = countCompletedTasks();
