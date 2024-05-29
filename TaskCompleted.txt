@@ -1,4 +1,4 @@
 2024-05-29|new task|Completed
-2024-05-29|12123|7|Completed
-2024-05-29|efsf|2|Completed
-2024-05-29|weqewq|3|Completed
+2024-05-29|dadasd|Completed
+2024-05-29|efsf|Completed
+2024-05-29|12123|Skipped

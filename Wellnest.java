@@ -486,10 +486,67 @@ public class Wellnest extends JFrame {
     private JPanel createAllHabitsPanel() {
         JPanel panel = new JPanel();
         panel.setBackground(Color.WHITE);
-        JLabel label = new JLabel("All Habits Panel");
+        JLabel titleLabel = new JLabel("All Habits Panel");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 25));
+        panel.add(titleLabel);
 
-        panel.add(label);
+        ArrayList<String> tasks = readTasksFromFile("tasks.txt");
+        for (String task : tasks) {
+            JPanel taskPanel = new JPanel(new GridBagLayout());
+            taskPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            taskPanel.setBackground(Color.WHITE);
+
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.anchor = GridBagConstraints.CENTER;
+            gbc.weightx = 1.0;
+
+            JLabel nameLabel = new JLabel(task, SwingConstants.CENTER);
+            nameLabel.setFont(new Font("Arial", Font.BOLD, 25));
+            taskPanel.add(nameLabel, gbc);
+
+            JPanel buttonPanel = new JPanel(new GridBagLayout());
+            buttonPanel.setPreferredSize(new Dimension(1000, 50));
+            buttonPanel.setMinimumSize(new Dimension(100, 50));
+            buttonPanel.setMaximumSize(new Dimension(100, 50));
+
+            GridBagConstraints gbcButtons = new GridBagConstraints();
+            gbcButtons.fill = GridBagConstraints.HORIZONTAL;
+            gbcButtons.insets = new Insets(3, 3, 3, 3);
+
+            JButton removeButton = new JButton("Remove Task");
+
+            removeButton.setBackground(new Color(255, 105, 97));
+            removeButton.setForeground(Color.WHITE);
+            removeButton.setFocusPainted(false);
+            removeButton.setFont(new Font("Arial", Font.BOLD, 25));
+            removeButton.setPreferredSize(new Dimension(200, 50));
+
+            buttonPanel.add(removeButton, gbcButtons);
+
+            gbc.gridy++;
+            taskPanel.add(buttonPanel, gbc);
+
+            panel.add(taskPanel);
+        }
+
         return panel;
+    }
+
+    private ArrayList<String> readTasksFromFile(String filename) {
+        ArrayList<String> tasksList = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                tasksList.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle file reading exception here
+        }
+        return tasksList;
     }
 
     /**
