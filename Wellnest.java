@@ -242,21 +242,48 @@ public class Wellnest extends JFrame {
         JPanel taskPanel = new JPanel();
         taskPanel.setLayout(new BoxLayout(taskPanel, BoxLayout.Y_AXIS));
         taskPanel.setBackground(Color.WHITE);
+<<<<<<< HEAD
 
+=======
+    
+        JPanel nameStatusPanel = new JPanel(new GridBagLayout());
+        nameStatusPanel.setPreferredSize(new Dimension(600, 50));
+        nameStatusPanel.setMinimumSize(new Dimension(100,100));
+        nameStatusPanel.setMaximumSize(new Dimension(600,100));
+    
+        // Create GridBagConstraints for positioning components
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weightx = 1.0; // Allow the components to expand horizontally
+    
+>>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 25));
         taskPanel.add(nameLabel);
 
         // Create a panel for the buttons and progress bar with fixed size
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         buttonPanel.setPreferredSize(new Dimension(600, 50));
         buttonPanel.setMinimumSize(new Dimension(600, 50));
+<<<<<<< HEAD
         buttonPanel.setMaximumSize(new Dimension(600, 50));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(3, 3, 3, 3); // Add some padding
 
+=======
+        buttonPanel.setMaximumSize(new Dimension(111111100, 50));
+    
+        GridBagConstraints gbcButtons = new GridBagConstraints();
+        gbcButtons.fill = GridBagConstraints.HORIZONTAL;
+        gbcButtons.insets = new Insets(3, 3, 3, 3); // Add some padding
+    
+>>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create buttons for the task item
         JButton completedButton = new JButton("Completed");
         JButton skippedButton = new JButton("Skipped");
@@ -281,8 +308,15 @@ public class Wellnest extends JFrame {
         removeButton.setBackground(new Color(255, 105, 97));
         removeButton.setForeground(Color.WHITE);
         removeButton.setFocusPainted(false);
+<<<<<<< HEAD
         removeButton.setFont(new Font("Arial", Font.BOLD, 14));
 
+=======
+        removeButton.setFont(new Font("Arial", Font.BOLD, 25));
+        removeButton.setPreferredSize(new Dimension(200, 50));
+        removeButton.setMaximumSize(new Dimension(100, 50));
+    
+>>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
@@ -411,6 +445,31 @@ public class Wellnest extends JFrame {
         // Add the remove button below the status label
         taskPanel.add(removeButton);
 
+<<<<<<< HEAD
+=======
+        nameStatusPanel.add(nameLabel);
+        nameStatusPanel.add(statusLabel);
+        nameStatusPanel.add(removeButton);
+
+        nameStatusPanel.add(nameLabel, gbc);
+
+        // Update GridBagConstraints for statusLabel
+        gbc.gridy = 1; // Move to the next row
+        gbc.insets = new Insets(5, 0, 0, 0); // Add some top padding
+
+        // Add statusLabel to nameStatusPanel
+        nameStatusPanel.add(statusLabel, gbc);
+
+        // Update GridBagConstraints for removeButton
+        gbc.gridy = 2; // Move to the next row
+        gbc.insets = new Insets(5, 0, 0, 0); // Add some top padding
+
+        // Add removeButton to nameStatusPanel
+        nameStatusPanel.add(removeButton, gbc);
+
+        taskPanel.add(nameStatusPanel);
+
+>>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         return taskPanel;
     }
 
