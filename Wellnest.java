@@ -201,21 +201,13 @@ public class Wellnest extends JFrame {
         // Add task panels to the task panel
         if (tasksForCurrentDate != null && !tasksForCurrentDate.isEmpty()) {
             for (String task : tasksForCurrentDate) {
-                System.out.println("Task: " + task); // Debug print
-                // Split the task string to extract the task name and progress
-                String[] taskParts = task.split("\\|");
-                if (taskParts.length >= 2) { // Check if taskParts has at least two elements
-                    String taskName = taskParts[0];
-                    int progress = Integer.parseInt(taskParts[1]); // Assuming progress is an integer
-        
-                    // Create task item panel with progress value
-                    JPanel taskItemPanel = createTaskItemPanel(currentDate.toString(), taskName, progress);
-                    taskPanel.add(taskItemPanel);
-                } else {
-                    // Handle tasks without progress value
-                    System.out.println("Task format is incorrect: " + task);
-                }
+                JPanel taskItemPanel = createTaskItemPanel(currentDate.toString(), task);
+                taskPanel.add(taskItemPanel);
             }
+        } else {
+            // If there are no tasks for the current date, display a message
+            JLabel noTasksLabel = new JLabel("No tasks for today.", SwingConstants.CENTER);
+            taskPanel.add(noTasksLabel);
         }
 
         // Add the task panel to the main panel
@@ -238,13 +230,10 @@ public class Wellnest extends JFrame {
      * @param taskName The name of the task.
      * @return The panel representing the task item.
      */
-    private JPanel createTaskItemPanel(String date, String taskName, int progress) {
+    private JPanel createTaskItemPanel(String date, String taskName) {
         JPanel taskPanel = new JPanel();
         taskPanel.setLayout(new BoxLayout(taskPanel, BoxLayout.Y_AXIS));
         taskPanel.setBackground(Color.WHITE);
-<<<<<<< HEAD
-
-=======
     
         JPanel nameStatusPanel = new JPanel(new GridBagLayout());
         nameStatusPanel.setPreferredSize(new Dimension(600, 50));
@@ -259,88 +248,73 @@ public class Wellnest extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.weightx = 1.0; // Allow the components to expand horizontally
     
->>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 25));
         taskPanel.add(nameLabel);
-
+    
         // Create a panel for the buttons and progress bar with fixed size
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         buttonPanel.setPreferredSize(new Dimension(600, 50));
         buttonPanel.setMinimumSize(new Dimension(600, 50));
-<<<<<<< HEAD
-        buttonPanel.setMaximumSize(new Dimension(600, 50));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(3, 3, 3, 3); // Add some padding
-
-=======
         buttonPanel.setMaximumSize(new Dimension(111111100, 50));
     
         GridBagConstraints gbcButtons = new GridBagConstraints();
         gbcButtons.fill = GridBagConstraints.HORIZONTAL;
         gbcButtons.insets = new Insets(3, 3, 3, 3); // Add some padding
     
->>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create buttons for the task item
         JButton completedButton = new JButton("Completed");
         JButton skippedButton = new JButton("Skipped");
         JButton button1 = new JButton("1");
         JButton removeButton = new JButton("Remove Task");
-
+    
         completedButton.setBackground(new Color(51, 122, 183));
         completedButton.setForeground(Color.WHITE);
         completedButton.setFocusPainted(false);
         completedButton.setFont(new Font("Arial", Font.BOLD, 14));
-
+    
         skippedButton.setBackground(new Color(51, 122, 183));
         skippedButton.setForeground(Color.WHITE);
         skippedButton.setFocusPainted(false);
         skippedButton.setFont(new Font("Arial", Font.BOLD, 14));
-
+    
         button1.setBackground(new Color(51, 122, 183));
         button1.setForeground(Color.WHITE);
         button1.setFocusPainted(false);
         button1.setFont(new Font("Arial", Font.BOLD, 14));
-
+    
         removeButton.setBackground(new Color(255, 105, 97));
         removeButton.setForeground(Color.WHITE);
         removeButton.setFocusPainted(false);
-<<<<<<< HEAD
-        removeButton.setFont(new Font("Arial", Font.BOLD, 14));
-
-=======
         removeButton.setFont(new Font("Arial", Font.BOLD, 25));
         removeButton.setPreferredSize(new Dimension(200, 50));
         removeButton.setMaximumSize(new Dimension(100, 50));
     
->>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
-
+    
         // Create a JTextField to store the float progress value
         JTextField progressField = new JTextField("0.0");
         progressField.setEditable(false);
-
+    
         // Get progress value from the database
         float initialProgressValue = getTaskProgressValue(date, taskName);
         progressBar.setValue((int) initialProgressValue);
         progressBar.setString(String.format("%.1f%%", initialProgressValue));
         progressField.setText(String.valueOf(initialProgressValue));
-
+    
         // Get total steps from the database
         int[] progressData = getTaskProgress(date, taskName);
         int totalSteps = progressData[1];
-        
+    
         // Get the current task status from the database
         String taskStatus = getTaskStatus(date, taskName);
-
+    
         // Create a status label
         JLabel statusLabel = new JLabel("", SwingConstants.CENTER);
-
+    
         // If the initial progress is 100% or status is "Completed", disable the buttons and add completion status
         if (initialProgressValue >= 100.0f || "Completed".equals(taskStatus)) {
             completedButton.setEnabled(false);
@@ -353,7 +327,7 @@ public class Wellnest extends JFrame {
             button1.setEnabled(false);
             statusLabel.setText("Task Skipped");
         }
-
+    
         // Add action listeners to the buttons
         completedButton.addActionListener(e -> {
             progressBar.setValue(100); // Set progress to 100%
@@ -365,9 +339,10 @@ public class Wellnest extends JFrame {
             taskPanel.revalidate();
             taskPanel.repaint();
             saveTaskStatus(date, taskName, "Completed");
-            updateTaskProgress(date, taskName, 100.0f);
+            taskProgressDatabase.put(date + "|" + taskName, 100.0f);
+            saveTaskProgressToFile();
         });
-
+    
         skippedButton.addActionListener(e -> {
             statusLabel.setText("Task Skipped");
             completedButton.setEnabled(false);
@@ -377,27 +352,27 @@ public class Wellnest extends JFrame {
             taskPanel.repaint();
             saveTaskStatus(date, taskName, "Skipped");
         });
-        
+    
         button1.addActionListener(e -> {
             float progressValue = Float.parseFloat(progressField.getText());
             if (progressValue < 100) {
                 float increment = 100.0f / totalSteps;
-
+    
                 // Add the increment to the current value
                 float newProgressValue = progressValue + increment;
-        
+    
                 // Ensure newProgressValue doesn't exceed 100
                 if (newProgressValue > 100.0f) {
                     newProgressValue = 100.0f;
                 }
-
+    
                 // Update the JTextField with the new progress
                 progressField.setText(String.valueOf(newProgressValue));
-        
+    
                 // Set the progress bar's value and update its display text with float precision
                 progressBar.setValue((int) newProgressValue);
                 progressBar.setString(String.format("%.1f%%", newProgressValue)); // Update progress text with one decimal place
-        
+    
                 // Check if the progress is now complete
                 if (newProgressValue >= 100.0f) {
                     statusLabel.setText("Task Completed");
@@ -409,44 +384,48 @@ public class Wellnest extends JFrame {
                     taskPanel.repaint();
                     saveTaskStatus(date, taskName, "Completed");
                 }
-
-                // Save task progress status
-                updateTaskProgress(date, taskName, newProgressValue);
+    
+                // Save task progress status only if it's not yet completed
+                if (newProgressValue < 100.0f) {
+                    // Update the progress in the taskProgress.txt file
+                    updateTaskProgress(date, taskName, newProgressValue);
+                    // Save task progress status
+                    taskProgressDatabase.put(date + "|" + taskName, newProgressValue);
+                    saveTaskProgressToFile();
+                }
             }
         });
-
+    
         removeButton.addActionListener(e -> {
             // Call the removeTask method with date, taskName, and taskPanel
             removeTask(LocalDate.parse(date), taskName, taskPanel);
         });
-
+    
         // Add components to the button panel with proper constraints
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.25;
         gbc.anchor = GridBagConstraints.CENTER;
         buttonPanel.add(completedButton, gbc);
-
+    
         gbc.gridx = 1;
         buttonPanel.add(skippedButton, gbc);
-
+    
         gbc.gridx = 2;
         buttonPanel.add(button1, gbc);
-
+    
         gbc.gridx = 3;
         buttonPanel.add(progressBar, gbc);
-
+    
         // Add the button panel to the task panel
         taskPanel.add(buttonPanel);
-
+    
         // Add the status label below the button panel
         taskPanel.add(statusLabel);
-
+    
         // Add the remove button below the status label
         taskPanel.add(removeButton);
 
-<<<<<<< HEAD
-=======
         nameStatusPanel.add(nameLabel);
         nameStatusPanel.add(statusLabel);
         nameStatusPanel.add(removeButton);
@@ -469,7 +448,6 @@ public class Wellnest extends JFrame {
 
         taskPanel.add(nameStatusPanel);
 
->>>>>>> f20a33d61173883fdb40e8b155f2ded6c168bfc1
         return taskPanel;
     }
 
@@ -638,7 +616,7 @@ public class Wellnest extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 openCalendarPanel();
             }
-        }); 
+        });
 
         panel.add(toggleSidebarButton, BorderLayout.WEST);
         panel.add(addButton, BorderLayout.EAST);
@@ -711,21 +689,10 @@ public class Wellnest extends JFrame {
      * @param status   The status of the task (e.g., "Completed", "Skipped").
      */
     private void saveTaskStatus(String date, String taskName, String status) {
-        // Load the current entries into the map
-        loadTaskStatusFromFile();
-
-        // Create the key for the new entry
-        String key = date + "|" + taskName;
-
-        // Update the map with the new or updated status
-        taskStatusDatabase.put(key, status);
-
-        // Save the entire map back to the file
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_COMPLETED_FILE_PATH))) {
-            for (Map.Entry<String, String> entry : taskStatusDatabase.entrySet()) {
-                writer.write(entry.getKey() + "|" + entry.getValue());
-                writer.newLine();
-            }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASK_COMPLETED_FILE_PATH, true))) {
+            String entry = date + "|" + taskName + "|" + status;
+            writer.write(entry);
+            writer.newLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -747,20 +714,14 @@ public class Wellnest extends JFrame {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\|");
-                if (parts.length >= 2) {
-                    LocalDate date = LocalDate.parse(parts[0]);
-                    String task = parts[1];
-                    int progress = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
-                    taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task + "|" + progress);
-                } else {
-                    System.out.println("Task format is incorrect: " + line);
-                }
+                LocalDate date = LocalDate.parse(parts[0]);
+                String task = parts[1];
+                taskDatabase.computeIfAbsent(date, k -> new ArrayList<>()).add(task);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
 
     /**
      * Loads task statuses from a file into the task status database.
@@ -776,7 +737,7 @@ public class Wellnest extends JFrame {
      * @throws IOException If an I/O error occurs while reading the file.
      */
     private void loadTaskStatusFromFile() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(TASK_COMPLETED_FILE_PATH))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("taskcompleted.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\|");
@@ -818,10 +779,11 @@ public class Wellnest extends JFrame {
      */
     private void saveTasksToFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE_PATH))) {
-            for (LocalDate date : taskDatabase.keySet()) {
-                List<String> tasks = taskDatabase.get(date);
+            for (Map.Entry<LocalDate, List<String>> entry : taskDatabase.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<String> tasks = entry.getValue();
                 for (String task : tasks) {
-                    writer.write(date.toString() + "|" + task);
+                    writer.write(date + "|" + task);
                     writer.newLine();
                 }
             }
@@ -829,7 +791,6 @@ public class Wellnest extends JFrame {
             e.printStackTrace();
         }
     }
-
 
     /**
      * Saves the task progress data to the TASK_PROGRESS_FILE_PATH file.
@@ -879,14 +840,6 @@ public class Wellnest extends JFrame {
         return new int[] { 0, 1 }; // Default to 0 progress and 1 step if not found
     }
 
-    /**
-     * Retrieves the status of a task for a specific date from the
-     * taskStatusDatabase.
-     * 
-     * @param date     The date of the task in the format "yyyy-MM-dd".
-     * @param taskName The name of the task.
-     * @return The status of the task, or null if not found.
-     */
     /**
      * Retrieves the status of a task for a specific date from the
      * taskStatusDatabase.
@@ -1124,7 +1077,6 @@ public class Wellnest extends JFrame {
         refreshTodayPanel();
     }
 
-
     /**
      * Refreshes the Today panel by removing all existing components and re-creating
      * it.
@@ -1241,18 +1193,12 @@ public class Wellnest extends JFrame {
             inputPanel.add(progressLabel);
             inputPanel.add(progressSpinner);
 
-            // Replace addButton with addTaskButton
-            addButton = new JButton("Add Task");
+            addButton = new JButton("Add");
             addButton.addActionListener(e -> {
-                // Get task details from input fields
-                String taskName = taskNameField.getText();
-                int progress = (int) progressSpinner.getValue();
-                
-                // Add the task
-                addTask(selectedDate, taskName, progress);
-                
-                // Close the dialog or perform any other necessary actions
-                dispose();
+                if (validateInput()) {
+                    addTask(selectedDate, taskNameField.getText(), (int) progressSpinner.getValue());
+                    dispose();
+                }
             });
 
             cancelButton = new JButton("Cancel");
@@ -1309,11 +1255,4 @@ public class Wellnest extends JFrame {
             return true;
         }
     }
-    
-    private boolean validateTaskFormat(String taskName) {
-        // Check if the task name is not empty and doesn't contain special characters
-        return !taskName.trim().isEmpty() && taskName.matches("[a-zA-Z0-9\\s]+");
-    }
-    
-    
 }
