@@ -237,8 +237,6 @@ public class Wellnest extends JFrame {
     
         JPanel nameStatusPanel = new JPanel(new GridBagLayout());
         nameStatusPanel.setPreferredSize(new Dimension(600, 50));
-        nameStatusPanel.setMinimumSize(new Dimension(100,100));
-        nameStatusPanel.setMaximumSize(new Dimension(600,100));
     
         // Create GridBagConstraints for positioning components
         GridBagConstraints gbc = new GridBagConstraints();
@@ -289,7 +287,6 @@ public class Wellnest extends JFrame {
         removeButton.setFocusPainted(false);
         removeButton.setFont(new Font("Arial", Font.BOLD, 25));
         removeButton.setPreferredSize(new Dimension(200, 50));
-        removeButton.setMaximumSize(new Dimension(100, 50));
     
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
