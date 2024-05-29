@@ -243,8 +243,20 @@ public class Wellnest extends JFrame {
         taskPanel.setLayout(new BoxLayout(taskPanel, BoxLayout.Y_AXIS));
         taskPanel.setBackground(Color.WHITE);
     
+        JPanel nameStatusPanel = new JPanel(new GridBagLayout());
+        nameStatusPanel.setPreferredSize(new Dimension(600, 50));
+    
+        // Create GridBagConstraints for positioning components
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weightx = 1.0; // Allow the components to expand horizontally
+    
         // Create a label for the task name
         JLabel nameLabel = new JLabel(taskName, SwingConstants.CENTER);
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 25));
         taskPanel.add(nameLabel);
     
         // Create a panel for the buttons and progress bar with fixed size
@@ -253,9 +265,9 @@ public class Wellnest extends JFrame {
         buttonPanel.setMinimumSize(new Dimension(600, 50));
         buttonPanel.setMaximumSize(new Dimension(111111100, 50));
     
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(3, 3, 3, 3); // Add some padding
+        GridBagConstraints gbcButtons = new GridBagConstraints();
+        gbcButtons.fill = GridBagConstraints.HORIZONTAL;
+        gbcButtons.insets = new Insets(3, 3, 3, 3); // Add some padding
     
         // Create buttons for the task item
         JButton completedButton = new JButton("Completed");
@@ -282,6 +294,7 @@ public class Wellnest extends JFrame {
         removeButton.setForeground(Color.WHITE);
         removeButton.setFocusPainted(false);
         removeButton.setFont(new Font("Arial", Font.BOLD, 25));
+        removeButton.setPreferredSize(new Dimension(200, 50));
     
         // Create a progress bar for the task item
         JProgressBar progressBar = new JProgressBar();
@@ -348,22 +361,22 @@ public class Wellnest extends JFrame {
             float progressValue = Float.parseFloat(progressField.getText());
             if (progressValue < 100) {
                 float increment = 100.0f / totalSteps;
-
+    
                 // Add the increment to the current value
                 float newProgressValue = progressValue + increment;
-
+    
                 // Ensure newProgressValue doesn't exceed 100
                 if (newProgressValue > 100.0f) {
                     newProgressValue = 100.0f;
                 }
-
+    
                 // Update the JTextField with the new progress
                 progressField.setText(String.valueOf(newProgressValue));
-
+    
                 // Set the progress bar's value and update its display text with float precision
                 progressBar.setValue((int) newProgressValue);
                 progressBar.setString(String.format("%.1f%%", newProgressValue)); // Update progress text with one decimal place
-
+    
                 // Check if the progress is now complete
                 if (newProgressValue >= 100.0f) {
                     statusLabel.setText("Task Completed");
@@ -375,8 +388,7 @@ public class Wellnest extends JFrame {
                     taskPanel.repaint();
                     saveTaskStatus(date, taskName, "Completed");
                 }
-
-                // Save task progress status
+    
                 updateTaskProgress(date, taskName, newProgressValue);
             }
         });
@@ -410,7 +422,29 @@ public class Wellnest extends JFrame {
     
         // Add the remove button below the status label
         taskPanel.add(removeButton);
-    
+
+        nameStatusPanel.add(nameLabel);
+        nameStatusPanel.add(statusLabel);
+        nameStatusPanel.add(removeButton);
+
+        nameStatusPanel.add(nameLabel, gbc);
+
+        // Update GridBagConstraints for statusLabel
+        gbc.gridy = 1; // Move to the next row
+        gbc.insets = new Insets(5, 0, 0, 0); // Add some top padding
+
+        // Add statusLabel to nameStatusPanel
+        nameStatusPanel.add(statusLabel, gbc);
+
+        // Update GridBagConstraints for removeButton
+        gbc.gridy = 2; // Move to the next row
+        gbc.insets = new Insets(5, 0, 0, 0); // Add some top padding
+
+        // Add removeButton to nameStatusPanel
+        nameStatusPanel.add(removeButton, gbc);
+
+        taskPanel.add(nameStatusPanel);
+
         return taskPanel;
     }
 
@@ -651,7 +685,6 @@ public class Wellnest extends JFrame {
      * @param taskName The name of the task.
      * @param status   The status of the task (e.g., "Completed", "Skipped").
      */
-    
     private void saveTaskStatus(String date, String taskName, String status) {
         // Load the current entries into the map
         loadTaskStatusFromFile();
@@ -1031,7 +1064,7 @@ public class Wellnest extends JFrame {
             refreshTodayPanel();
         }
     }
-    
+
     /**
      * Method to add a task to the task database and refresh the Today panel.
      * used in the addButton action listener from the TaskInputDialog class.
@@ -1247,6 +1280,4 @@ public class Wellnest extends JFrame {
         // Check if the task name is not empty and doesn't contain special characters
         return !taskName.trim().isEmpty() && taskName.matches("[a-zA-Z0-9\\s]+");
     }
-    
-    
 }
