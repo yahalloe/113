@@ -193,6 +193,7 @@ public class Wellnest extends JFrame {
         // Add the calendar panel to the main panel
         mainPanel.add(calendarPanel, BorderLayout.NORTH);
 
+        // Create a panel for the tasks
         JPanel taskPanel = new JPanel();
         taskPanel.setLayout(new BoxLayout(taskPanel, BoxLayout.Y_AXIS));
         taskPanel.setBackground(Color.WHITE);
