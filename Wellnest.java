@@ -483,6 +483,11 @@ public class Wellnest extends JFrame {
         return panel;
     }
 
+    /**
+     * Creates a panel displaying all habits with their respective remove buttons.
+     *
+     * @return the JPanel containing all habits with remove buttons
+     */
     private JPanel createAllHabitsPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));  // Set BoxLayout for vertical stacking
@@ -527,6 +532,16 @@ public class Wellnest extends JFrame {
             removeButton.setFont(new Font("Arial", Font.BOLD, 25));
             removeButton.setPreferredSize(new Dimension(200, 50));
     
+            // Add action listener to the remove button
+            removeButton.addActionListener(e -> {
+                // Remove the task from the list of tasks
+                tasks.remove(task);
+                // Update the display
+                panel.remove(taskPanel);
+                panel.revalidate();
+                panel.repaint();
+            });
+    
             buttonPanel.add(removeButton, gbcButtons);
     
             gbc.gridy++;
@@ -538,8 +553,13 @@ public class Wellnest extends JFrame {
     
         return panel;
     }
-    
 
+    /**
+     * Reads tasks from a file and returns them as an ArrayList of strings.
+     *
+     * @param filename the name of the file to read tasks from
+     * @return an ArrayList containing the tasks read from the file
+     */
     private ArrayList<String> readTasksFromFile(String filename) {
         ArrayList<String> tasksList = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -700,6 +720,7 @@ public class Wellnest extends JFrame {
 
     private void showAllHabitsPanel() {
         switchPanel(allHabitsPanel);
+        refreshAllHabitsPanel();
     }
 
     /**
@@ -1170,6 +1191,17 @@ public class Wellnest extends JFrame {
     }
 
     /**
+     * Refreshes the "All Habits" panel by removing all components, recreating the panel with updated data,
+     * and then revalidating and repainting the panel to reflect the changes.
+     */
+    private void refreshAllHabitsPanel() {
+        allHabitsPanel.removeAll(); // Remove all components from the Today panel
+        allHabitsPanel.add(createAllHabitsPanel()); // Re-create the Today panel
+        allHabitsPanel.revalidate(); // Revalidate the panel to reflect changes
+        allHabitsPanel.repaint(); // Repaint the panel
+    }
+
+    /**
      * Sets the current panel to the specified panel.
      * 
      * This method replaces the current panel displayed in the homePanel with the
@@ -1198,9 +1230,8 @@ public class Wellnest extends JFrame {
      * This method replaces the current panel displayed in the homePanel with the
      * specified panel if it's different from the current one. It removes the
      * currentPanel,
-     * adds the new panel to homePanel, updates the currentPanel reference, enables
-     * the
-     * backButton, and refreshes the display to reflect the change.
+     * adds the new panel to homePanel, updates the currentPanel reference and 
+     * refreshes the display to reflect the change.
      * 
      * @param newPanel The panel to switch to.
      */
@@ -1212,7 +1243,6 @@ public class Wellnest extends JFrame {
             homePanel.repaint();
             panelStack.push(currentPanel);
             currentPanel = newPanel;
-            backButton.setEnabled(true);
         }
     }
 
@@ -1342,4 +1372,5 @@ public class Wellnest extends JFrame {
         // Check if the task name is not empty and doesn't contain special characters
         return !taskName.trim().isEmpty() && taskName.matches("[a-zA-Z0-9\\s]+");
     }
+
 }
